@@ -1,0 +1,47 @@
+spring:
+  application:
+    name: product-service
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      acks: all
+      retries: 10
+    consumer:
+      group-id: product-service
+
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/product_db?createDatabaseIfNotExist=true&serverTimezone=Europe/Berlin
+    username: root
+    password: root4Web!
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: ${SERVER_PORT:8083}
+  servlet:
+    context-path: /product-service
+
+logging:
+  level:
+    org.hibernate.SQL: OFF
+    org.hibernate.orm.jdbc.bind: OFF
+    org.hibernate.orm.jdbc.extract: OFF
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+outbox:
+  publisher:
+    fixed-delay: 5000
+    batch-size: 100
+    max-retries: 5
