@@ -1,135 +1,106 @@
 package com.gwatcho.paymentservice.service;
 
+import com.gwatcho.paymentservice.controller.PaymentController;
+import com.gwatcho.paymentservice.dto.DeliveryAddress;
 import com.gwatcho.paymentservice.dto.PaymentRequest;
-import com.gwatcho.paymentservice.dto.PaymentResponse;
 import com.gwatcho.paymentservice.entity.Payment;
 import com.gwatcho.paymentservice.entity.PaymentStatus;
-import com.gwatcho.paymentservice.event.PaymentEventPublisher;
-import com.gwatcho.paymentservice.exception.BusinessException;
-import com.gwatcho.paymentservice.exception.ResourceNotFoundException;
-import com.gwatcho.paymentservice.payment.PaymentProvider;
-import com.gwatcho.paymentservice.payment.PaymentResult;
+import com.gwatcho.paymentservice.event.OrderCreatedEvent;
+import com.gwatcho.paymentservice.event.PaymentCompletedEvent;
+import com.gwatcho.paymentservice.kafka.PaymentCompletedEventProducer;
 import com.gwatcho.paymentservice.repository.PaymentRepository;
+import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 @Service
-@Transactional
 public class PaymentService {
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
 
     private final PaymentRepository paymentRepository;
-    private final PaymentProvider paymentProvider;
-    private final PaymentEventPublisher eventPublisher;
+
+    private final PaymentCompletedEventProducer paymentCompletedEventProducer;
 
     public PaymentService(
-            PaymentRepository paymentRepository,
-            PaymentProvider paymentProvider,
-            PaymentEventPublisher eventPublisher) {
-
+            PaymentRepository paymentRepository, PaymentCompletedEventProducer paymentCompletedEventProducer) {
         this.paymentRepository = paymentRepository;
-        this.paymentProvider = paymentProvider;
-        this.eventPublisher = eventPublisher;
+        this.paymentCompletedEventProducer = paymentCompletedEventProducer;
     }
 
-    public PaymentResponse createPayment(
-            PaymentRequest request) {
+    public Payment createPayment(
+            PaymentRequest request
+    ) {
 
-        if (paymentRepository.existsByOrderId(
-                request.orderId())) {
-
-            throw new BusinessException(
-                    "Payment already exists for order "
-                            + request.orderId()
-            );
-        }
-
-        Payment payment = new Payment(
-                request.orderId(),
-                request.customerId(),
-                request.amount(),
-                request.currency(),
-                PaymentStatus.PENDING,
-                request.paymentMethod(),
-                null
-        );
-
-        Payment savedPayment =
-                paymentRepository.save(payment);
-
-        PaymentResult result =
-                paymentProvider.processPayment(
+        Payment payment =
+                new Payment(
+                        request.orderId(),
+                        request.customerId(),
                         request.amount(),
                         request.currency(),
                         request.paymentMethod()
                 );
 
-        if (result.successful()) {
+        return paymentRepository.save(payment);
+    }
 
-            savedPayment.setStatus(
-                    PaymentStatus.COMPLETED
-            );
+    @Transactional
+    public Payment processOrderCreated(OrderCreatedEvent event) {
+        log.info("Processing order.created: orderId={}, customerId={}, amount={}", event.orderId(), event.customerId(),
+                event.totalAmount());
 
-            savedPayment.setTransactionId(
-                    result.transactionId()
-            );
+        /*
+         * Idempotency:
+         *
+         * Kafka can deliver the same event more than once.
+         */
+        var existing = paymentRepository.findByOrderId(event.orderId());
 
-            Payment completedPayment =
-                    paymentRepository.save(savedPayment);
+        if (existing.isPresent()) {
+            Payment payment = existing.get();
 
-            eventPublisher.publishCompleted(
-                    completedPayment
-            );
+            log.info("Payment already exists for orderId={}, paymentId={}, status={}", payment.getOrderId(), payment.getId(),
+                    payment.getStatus());
 
-            return toResponse(completedPayment);
+            return payment;
         }
 
-        savedPayment.setStatus(
-                PaymentStatus.FAILED
-        );
+        Payment payment =
+                new Payment(event.orderId(), event.customerId(), event.totalAmount(), event.currency(), event.paymentMethod());
 
-        Payment failedPayment =
-                paymentRepository.save(savedPayment);
+        paymentRepository.save(payment);
 
-        eventPublisher.publishFailed(
-                failedPayment,
-                result.failureReason()
-        );
+        /*
+         * In this demo we simulate successful payment.
+         */
+        String transactionId = "TXN-" + UUID.randomUUID();
 
-        return toResponse(failedPayment);
+        payment.complete(transactionId);
+
+        paymentRepository.save(payment);
+
+        PaymentCompletedEvent completedEvent = new PaymentCompletedEvent(payment.getId(), payment.getOrderId(),
+                payment.getCustomerId(), payment.getAmount(), payment.getCurrency(),
+                payment.getTransactionId(),  new DeliveryAddress(
+                event.street(),
+                event.postalCode(),
+                event.city(),
+                event.country()
+        ));
+
+        paymentCompletedEventProducer.publish(completedEvent);
+
+        log.info("Payment completed: paymentId={}, orderId={}, transactionId={}", payment.getId(), payment.getOrderId(),
+                payment.getTransactionId());
+
+        return payment;
     }
+
 
     @Transactional(readOnly = true)
-    public PaymentResponse getPayment(Long id) {
-
-        Payment payment =
-                paymentRepository.findById(id)
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException(
-                                        "Payment with id "
-                                                + id
-                                                + " not found"
-                                )
-                        );
-
-        return toResponse(payment);
-    }
-
-    private PaymentResponse toResponse(
-            Payment payment) {
-
-        return new PaymentResponse(
-                payment.getId(),
-                payment.getOrderId(),
-                payment.getCustomerId(),
-                payment.getAmount(),
-                payment.getCurrency(),
-                payment.getStatus(),
-                payment.getPaymentMethod(),
-                payment.getTransactionId(),
-                payment.getCreatedAt(),
-                payment.getUpdatedAt()
-        );
+    public Payment getPayment( Long paymentId ) {
+        return paymentRepository .findById(paymentId) .orElseThrow(
+            () -> new IllegalArgumentException( "Payment not found: " + paymentId ) );
     }
 }

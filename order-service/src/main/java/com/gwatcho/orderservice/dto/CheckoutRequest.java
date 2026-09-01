@@ -1,6 +1,7 @@
 package com.gwatcho.orderservice.dto;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
@@ -14,6 +15,9 @@ public record CheckoutRequest(
         @NotNull(message = "Currency is required")
         String currency,
 
+        @NotBlank(message = "Payment method is required")
+        String paymentMethod,
+
         @NotNull(message = "Delivery address is required")
         @Valid
         DeliveryAddressRequest deliveryAddress,
@@ -21,6 +25,5 @@ public record CheckoutRequest(
         @NotEmpty(message = "Checkout must contain at least one item")
         @Valid
         List<CheckoutItemRequest> items
-
 ) {
 }

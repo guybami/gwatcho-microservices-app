@@ -1,5 +1,7 @@
 package com.gwatcho.paymentservice.event;
 
+import com.gwatcho.paymentservice.dto.DeliveryAddress;
+
 import java.math.BigDecimal;
 
 public record PaymentCompletedEvent(
@@ -8,6 +10,7 @@ public record PaymentCompletedEvent(
         Long customerId,
         BigDecimal amount,
         String currency,
-        String transactionId
+        String transactionId,
+        DeliveryAddress deliveryAddress
 ) {
 }

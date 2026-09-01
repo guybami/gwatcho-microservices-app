@@ -289,7 +289,7 @@ class OrderKafkaEndToEndTest {
     // CHECKOUT REQUEST
     // =========================================================
     private CheckoutRequest createCheckoutRequest() {
-        return new CheckoutRequest(100L, "EUR", createDeliveryAddressRequest(), List.of(new CheckoutItemRequest(1L, 2), new CheckoutItemRequest(25L, 3)));
+        return new CheckoutRequest(100L, "EUR", "CARD", createDeliveryAddressRequest(), List.of(new CheckoutItemRequest(1L, 2), new CheckoutItemRequest(25L, 3)));
     }
 
     // =========================================================

@@ -23,6 +23,8 @@ public record OrderCreatedEvent(
 
         String currency,
 
+        String paymentMethod,
+
         String street,
 
         String postalCode,

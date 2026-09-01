@@ -2,6 +2,7 @@ package com.gwatcho.paymentservice.event;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gwatcho.paymentservice.dto.DeliveryAddress;
 import com.gwatcho.paymentservice.entity.Payment;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -30,7 +31,7 @@ public class PaymentEventPublisher {
         this.objectMapper = objectMapper;
     }
 
-    public void publishCompleted(Payment payment) {
+    public void publishCompleted(Payment payment, DeliveryAddress deliveryAddress) {
 
         PaymentCompletedEvent event =
                 new PaymentCompletedEvent(
@@ -39,7 +40,8 @@ public class PaymentEventPublisher {
                         payment.getCustomerId(),
                         payment.getAmount(),
                         payment.getCurrency(),
-                        payment.getTransactionId()
+                        payment.getTransactionId(),
+                        deliveryAddress
                 );
 
         send(

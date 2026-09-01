@@ -538,6 +538,7 @@ class OrderServiceTest {
                 new CheckoutRequest(
                         100L,
                         "EUR",
+                        "CARD",
                         createDeliveryAddressRequest(),
                         List.of()
                 );
@@ -729,6 +730,7 @@ class OrderServiceTest {
                 new CheckoutRequest(
                         100L,
                         "EUR",
+                        "CARD",
                         createDeliveryAddressRequest(),
                         List.of(
                                 new CheckoutItemRequest(
@@ -765,6 +767,7 @@ class OrderServiceTest {
                 new CheckoutRequest(
                         100L,
                         "EUR",
+                        "CARD",
                         createDeliveryAddressRequest(),
                         List.of(
                                 new CheckoutItemRequest(
@@ -1066,6 +1069,7 @@ class OrderServiceTest {
         return new CheckoutRequest(
                 100L,
                 "EUR",
+                "CARD",
                 createDeliveryAddressRequest(),
                 List.of(
                         new CheckoutItemRequest(
@@ -1134,6 +1138,7 @@ class OrderServiceTest {
                         .id(1L)
                         .customerId(100L)
                         .currency("EUR")
+                        .paymentMethod("CARD")
                         .status(OrderStatus.CREATED)
                         .deliveryAddress(
                                 createAddress()

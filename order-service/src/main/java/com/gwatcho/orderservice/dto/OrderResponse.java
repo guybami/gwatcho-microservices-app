@@ -18,6 +18,8 @@ public record OrderResponse(
 
         String currency,
 
+        String paymentMethod,
+
         String street,
 
         String postalCode,

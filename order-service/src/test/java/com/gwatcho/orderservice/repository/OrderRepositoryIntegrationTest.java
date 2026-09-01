@@ -29,6 +29,7 @@ class OrderRepositoryIntegrationTest {
                         .customerId(100L)
                         .status(OrderStatus.CREATED)
                         .currency("EUR")
+                        .paymentMethod("CARD")
                         .totalAmount(
                                 new BigDecimal("125.00")
                         )
@@ -87,6 +88,7 @@ class OrderRepositoryIntegrationTest {
                         .customerId(200L)
                         .status(OrderStatus.CREATED)
                         .currency("EUR")
+                        .paymentMethod("CARD")
                         .totalAmount(
                                 new BigDecimal("50.00")
                         )

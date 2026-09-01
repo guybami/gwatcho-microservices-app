@@ -25,9 +25,7 @@ class PaymentRepositoryIntegrationTest {
                 10L,
                 new BigDecimal("149.99"),
                 "EUR",
-                PaymentStatus.PENDING,
-                "CARD",
-                "TX-123"
+                "CARD"
         );
 
         Payment saved =
@@ -49,9 +47,8 @@ class PaymentRepositoryIntegrationTest {
                 10L,
                 new BigDecimal("149.99"),
                 "EUR",
-                PaymentStatus.COMPLETED,
-                "CARD",
-                "TX-123"
+                "CARD"
+
         );
 
         paymentRepository.save(payment);
@@ -78,11 +75,9 @@ class PaymentRepositoryIntegrationTest {
                 10L,
                 new BigDecimal("149.99"),
                 "EUR",
-                PaymentStatus.PENDING,
-                "CARD",
-                null
+                "CARD"
         );
-
+        payment.pending("TX-123");
         paymentRepository.save(payment);
 
         assertTrue(

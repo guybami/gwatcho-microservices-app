@@ -35,8 +35,11 @@ services:
 
 app:
   kafka:
+    consumer:
+      group-id: order-service
     topics:
       order-created: order.created
+      delivery-completed: delivery.completed
 
 logging:
   level:

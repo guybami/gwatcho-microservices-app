@@ -1,246 +1,408 @@
 package com.gwatcho.paymentservice.service;
 
-import com.gwatcho.paymentservice.dto.PaymentRequest;
-import com.gwatcho.paymentservice.dto.PaymentResponse;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.gwatcho.paymentservice.entity.Payment;
 import com.gwatcho.paymentservice.entity.PaymentStatus;
-import com.gwatcho.paymentservice.event.PaymentEventPublisher;
-import com.gwatcho.paymentservice.exception.BusinessException;
-import com.gwatcho.paymentservice.exception.ResourceNotFoundException;
-import com.gwatcho.paymentservice.payment.PaymentProvider;
-import com.gwatcho.paymentservice.payment.PaymentResult;
+import com.gwatcho.paymentservice.event.OrderCreatedEvent;
+import com.gwatcho.paymentservice.event.PaymentCompletedEvent;
+import com.gwatcho.paymentservice.kafka.PaymentCompletedEventProducer;
 import com.gwatcho.paymentservice.repository.PaymentRepository;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
+    @Mock private PaymentRepository paymentRepository;
 
-    @Mock
-    private PaymentRepository paymentRepository;
+    @Mock private PaymentCompletedEventProducer paymentCompletedEventProducer;
 
-    @Mock
-    private PaymentProvider paymentProvider;
+    @InjectMocks private PaymentService paymentService;
 
-    @Mock
-    private PaymentEventPublisher eventPublisher;
+    private OrderCreatedEvent orderCreatedEvent;
 
-    private PaymentService paymentService;
+    // =========================================================
+    // SETUP
+    // =========================================================
 
     @BeforeEach
     void setUp() {
-        paymentService = new PaymentService(
-                paymentRepository,
-                paymentProvider,
-                eventPublisher
-        );
-    }
-
-    @Test
-    void createPayment_successfulPayment() {
-
-        PaymentRequest request = new PaymentRequest(
-                100L,
-                10L,
-                new BigDecimal("149.99"),
-                "EUR",
-                "CARD"
-        );
-
-        Payment savedPayment = new Payment(
-                100L,
-                10L,
-                new BigDecimal("149.99"),
-                "EUR",
-                PaymentStatus.PENDING,
-                "CARD",
-                null
-        );
-
-        PaymentResult result = new PaymentResult(
-                true,
-                "TX-123",
-                null
-        );
-
-        when(paymentRepository.existsByOrderId(100L))
-                .thenReturn(false);
-
-        when(paymentRepository.save(any(Payment.class)))
-                .thenReturn(savedPayment);
-
-        when(paymentProvider.processPayment(
-                request.amount(),
-                request.currency(),
-                request.paymentMethod()
-        )).thenReturn(result);
-
-        PaymentResponse response =
-                paymentService.createPayment(request);
-
-        assertNotNull(response);
-        assertEquals(100L, response.orderId());
-        assertEquals(10L, response.customerId());
-        assertEquals(
-                new BigDecimal("149.99"),
-                response.amount()
-        );
-        assertEquals("EUR", response.currency());
-        assertEquals(
-                PaymentStatus.COMPLETED,
-                response.status()
-        );
-
-        verify(paymentRepository, times(2))
-                .save(any(Payment.class));
-
-        verify(eventPublisher)
-                .publishCompleted(savedPayment);
-    }
-
-    @Test
-    void createPayment_failedPayment() {
-
-        PaymentRequest request = new PaymentRequest(
-                100L,
-                10L,
-                new BigDecimal("149.99"),
-                "EUR",
-                "CARD"
-        );
-
-        Payment savedPayment = new Payment(
-                100L,
-                10L,
-                new BigDecimal("149.99"),
-                "EUR",
-                PaymentStatus.PENDING,
-                "CARD",
-                null
-        );
-
-        PaymentResult result = new PaymentResult(
-                false,
-                null,
-                "Card declined"
-        );
-
-        when(paymentRepository.existsByOrderId(100L))
-                .thenReturn(false);
-
-        when(paymentRepository.save(any(Payment.class)))
-                .thenReturn(savedPayment);
-
-        when(paymentProvider.processPayment(
-                request.amount(),
-                request.currency(),
-                request.paymentMethod()
-        )).thenReturn(result);
-
-        PaymentResponse response =
-                paymentService.createPayment(request);
-
-        assertNotNull(response);
-        assertEquals(
-                PaymentStatus.FAILED,
-                response.status()
-        );
-
-        verify(eventPublisher)
-                .publishFailed(
-                        savedPayment,
-                        "Card declined"
+        orderCreatedEvent =
+                new OrderCreatedEvent(
+                        "event-order-001",
+                        "ORDER_CREATED",
+                        100L,
+                        200L,
+                        "CREATED",
+                        new BigDecimal("2693.28"),
+                        "EUR",
+                        "CREDIT_CARD",
+                        "Main Street 10",
+                        "74172",
+                        "Neckarsulm",
+                        "DE",
+                        List.of(),
+                        LocalDateTime.of(
+                                2026,
+                                8,
+                                30,
+                                10,
+                                0
+                        )
                 );
     }
 
+    // =========================================================
+    // CREATE PAYMENT
+    // =========================================================
+
     @Test
-    void createPayment_whenOrderAlreadyHasPayment_throwsException() {
+    void shouldCreateAndCompletePaymentFromOrderCreated() {
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.empty());
 
-        PaymentRequest request = new PaymentRequest(
-                100L,
-                10L,
-                new BigDecimal("149.99"),
-                "EUR",
-                "CARD"
-        );
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
 
-        when(paymentRepository.existsByOrderId(100L))
-                .thenReturn(true);
+            /*
+             * Simulate generated database ID.
+             *
+             * The entity ID is normally generated by JPA.
+             * For a pure unit test, the service behavior is
+             * what matters.
+             */
+            setPaymentId(payment, 10L);
 
-        BusinessException exception =
-                assertThrows(
-                        BusinessException.class,
-                        () -> paymentService.createPayment(request)
-                );
+            return payment;
+        });
 
-        assertEquals(
-                "Payment already exists for order 100",
-                exception.getMessage()
-        );
+        Payment result = paymentService.processOrderCreated(orderCreatedEvent);
 
-        verify(paymentRepository, never())
-                .save(any());
+        assertThat(result).isNotNull();
 
-        verifyNoInteractions(paymentProvider);
-        verifyNoInteractions(eventPublisher);
+        assertThat(result.getId()).isEqualTo(10L);
+
+        assertThat(result.getOrderId()).isEqualTo(100L);
+
+        assertThat(result.getCustomerId()).isEqualTo(200L);
+
+        assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("2693.28"));
+
+        assertThat(result.getCurrency()).isEqualTo("EUR");
+
+        assertThat(result.getPaymentMethod()).isEqualTo("CREDIT_CARD");
+
+        assertThat(result.getStatus()).isEqualTo(PaymentStatus.COMPLETED);
+
+        assertThat(result.getTransactionId()).isNotBlank();
+
+        verify(paymentRepository).findByOrderId(100L);
+
+        verify(paymentRepository, org.mockito.Mockito.times(2)).save(any(Payment.class));
+
+        verify(paymentCompletedEventProducer).publish(any(PaymentCompletedEvent.class));
     }
 
+    // =========================================================
+    // PAYMENT COMPLETED EVENT
+    // =========================================================
+
     @Test
-    void getPayment_returnsPayment() {
+    void shouldPublishCorrectPaymentCompletedEvent() {
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.empty());
 
-        Payment payment = new Payment(
-                100L,
-                10L,
-                new BigDecimal("149.99"),
-                "EUR",
-                PaymentStatus.COMPLETED,
-                "CARD",
-                "TX-123"
-        );
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
 
-        when(paymentRepository.findById(1L))
-                .thenReturn(Optional.of(payment));
+            setPaymentId(payment, 10L);
 
-        PaymentResponse response =
-                paymentService.getPayment(1L);
+            return payment;
+        });
 
-        assertNotNull(response);
-        assertEquals(100L, response.orderId());
-        assertEquals(
-                PaymentStatus.COMPLETED,
-                response.status()
-        );
-        assertEquals(
-                "TX-123",
-                response.transactionId()
-        );
+        paymentService.processOrderCreated(orderCreatedEvent);
+
+        ArgumentCaptor<PaymentCompletedEvent> captor = ArgumentCaptor.forClass(PaymentCompletedEvent.class);
+
+        verify(paymentCompletedEventProducer).publish(captor.capture());
+
+        PaymentCompletedEvent event = captor.getValue();
+
+        assertThat(event.paymentId()).isEqualTo(10L);
+
+        assertThat(event.orderId()).isEqualTo(100L);
+
+        assertThat(event.customerId()).isEqualTo(200L);
+
+        assertThat(event.amount()).isEqualByComparingTo(new BigDecimal("2693.28"));
+
+        assertThat(event.currency()).isEqualTo("EUR");
+
+        assertThat(event.transactionId()).isNotBlank();
     }
 
+    // =========================================================
+    // DUPLICATE ORDER
+    // =========================================================
+
     @Test
-    void getPayment_whenNotFound_throwsException() {
+    void shouldReturnExistingPaymentForDuplicateOrderCreated() {
+        Payment existingPayment = createCompletedPayment(10L, 100L);
 
-        when(paymentRepository.findById(999L))
-                .thenReturn(Optional.empty());
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.of(existingPayment));
 
-        ResourceNotFoundException exception =
-                assertThrows(
-                        ResourceNotFoundException.class,
-                        () -> paymentService.getPayment(999L)
-                );
+        Payment result = paymentService.processOrderCreated(orderCreatedEvent);
 
-        assertEquals(
-                "Payment with id 999 not found",
-                exception.getMessage()
-        );
+        assertThat(result).isSameAs(existingPayment);
+
+        assertThat(result.getId()).isEqualTo(10L);
+
+        assertThat(result.getOrderId()).isEqualTo(100L);
+
+        assertThat(result.getStatus()).isEqualTo(PaymentStatus.COMPLETED);
+
+        /*
+         * No new payment must be created.
+         */
+        verify(paymentRepository, never()).save(any(Payment.class));
+
+        /*
+         * No duplicate payment.completed event.
+         */
+        verify(paymentCompletedEventProducer, never()).publish(any(PaymentCompletedEvent.class));
+    }
+
+    // =========================================================
+    // PAYMENT METHOD
+    // =========================================================
+
+    @Test
+    void shouldStorePaymentMethodFromOrderCreatedEvent() {
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.empty());
+
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
+
+            setPaymentId(payment, 20L);
+
+            return payment;
+        });
+
+        Payment result = paymentService.processOrderCreated(orderCreatedEvent);
+
+        assertThat(result.getPaymentMethod()).isEqualTo("CREDIT_CARD");
+    }
+
+    // =========================================================
+    // AMOUNT
+    // =========================================================
+
+    @Test
+    void shouldUseOrderTotalAmountForPayment() {
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.empty());
+
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
+
+            setPaymentId(payment, 30L);
+
+            return payment;
+        });
+
+        Payment result = paymentService.processOrderCreated(orderCreatedEvent);
+
+        assertThat(result.getAmount()).isEqualByComparingTo(new BigDecimal("2693.28"));
+    }
+
+    // =========================================================
+    // CURRENCY
+    // =========================================================
+
+    @Test
+    void shouldUseOrderCurrencyForPayment() {
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.empty());
+
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
+
+            setPaymentId(payment, 40L);
+
+            return payment;
+        });
+
+        Payment result = paymentService.processOrderCreated(orderCreatedEvent);
+
+        assertThat(result.getCurrency()).isEqualTo("EUR");
+    }
+
+    // =========================================================
+    // ORDER ID
+    // =========================================================
+
+    @Test
+    void shouldUseOrderIdForPayment() {
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.empty());
+
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
+
+            setPaymentId(payment, 50L);
+
+            return payment;
+        });
+
+        Payment result = paymentService.processOrderCreated(orderCreatedEvent);
+
+        assertThat(result.getOrderId()).isEqualTo(100L);
+    }
+
+    // =========================================================
+    // CUSTOMER ID
+    // =========================================================
+
+    @Test
+    void shouldUseCustomerIdFromOrderCreatedEvent() {
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.empty());
+
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
+
+            setPaymentId(payment, 60L);
+
+            return payment;
+        });
+
+        Payment result = paymentService.processOrderCreated(orderCreatedEvent);
+
+        assertThat(result.getCustomerId()).isEqualTo(200L);
+    }
+
+    // =========================================================
+    // TRANSACTION ID
+    // =========================================================
+
+    @Test
+    void shouldGenerateTransactionId() {
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.empty());
+
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
+
+            setPaymentId(payment, 70L);
+
+            return payment;
+        });
+
+        Payment result = paymentService.processOrderCreated(orderCreatedEvent);
+
+        assertThat(result.getTransactionId()).isNotNull();
+
+        assertThat(result.getTransactionId()).startsWith("TXN-");
+    }
+
+    // =========================================================
+    // INITIAL PAYMENT STATUS
+    // =========================================================
+
+    @Test
+    void shouldCompletePayment() {
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.empty());
+
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
+
+            setPaymentId(payment, 80L);
+
+            return payment;
+        });
+
+        Payment result = paymentService.processOrderCreated(orderCreatedEvent);
+
+        assertThat(result.getStatus()).isEqualTo(PaymentStatus.COMPLETED);
+    }
+
+    // =========================================================
+    // EVENT CONSISTENCY
+    // =========================================================
+
+    @Test
+    void shouldPublishEventUsingPersistedPaymentData() {
+        when(paymentRepository.findByOrderId(100L)).thenReturn(Optional.empty());
+
+        when(paymentRepository.save(any(Payment.class))).thenAnswer(invocation -> {
+            Payment payment = invocation.getArgument(0);
+
+            setPaymentId(payment, 90L);
+
+            return payment;
+        });
+
+        paymentService.processOrderCreated(orderCreatedEvent);
+
+        ArgumentCaptor<PaymentCompletedEvent> captor = ArgumentCaptor.forClass(PaymentCompletedEvent.class);
+
+        verify(paymentCompletedEventProducer).publish(captor.capture());
+
+        PaymentCompletedEvent event = captor.getValue();
+
+        assertThat(event.paymentId()).isEqualTo(90L);
+
+        assertThat(event.orderId()).isEqualTo(100L);
+
+        assertThat(event.customerId()).isEqualTo(200L);
+
+        assertThat(event.amount()).isEqualByComparingTo(new BigDecimal("2693.28"));
+
+        assertThat(event.currency()).isEqualTo("EUR");
+
+        assertThat(event.transactionId()).isNotBlank();
+    }
+
+    // =========================================================
+    // HELPER
+    // =========================================================
+
+    private Payment createCompletedPayment(Long paymentId, Long orderId) {
+        Payment payment = new Payment(orderId, 200L, new BigDecimal("2693.28"), "EUR", "CREDIT_CARD");
+
+        setPaymentId(payment, paymentId);
+
+        payment.complete("TXN-EXISTING");
+
+        return payment;
+    }
+
+    /*
+     * The Payment entity uses @GeneratedValue, so the ID is
+     * normally assigned by Hibernate.
+     *
+     * For a unit test we need a deterministic ID.
+     *
+     * If your Payment entity already has a setId() method,
+     * replace this helper with payment.setId(id).
+     */
+    private void setPaymentId(Payment payment, Long id) {
+        try {
+            var field = Payment.class.getDeclaredField("id");
+
+            field.setAccessible(true);
+
+            field.set(payment, id);
+
+        } catch (Exception ex) {
+            throw new IllegalStateException("Could not set payment ID for test", ex);
+        }
     }
 }
+

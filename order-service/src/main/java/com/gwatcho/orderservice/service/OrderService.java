@@ -101,6 +101,7 @@ public class OrderService {
                         .status(
                                 OrderStatus.CREATED
                         )
+                        .paymentMethod(request.paymentMethod())
                         .deliveryAddress(
                                 DeliveryAddress.builder()
                                         .street(
@@ -322,7 +323,7 @@ public class OrderService {
     // GET ALL ORDERS
     // =========================================================
     @Transactional(readOnly = true)
-    public List < OrderResponse > getOrders() {
+    public List <OrderResponse> getOrders() {
 
         return orderRepository
                 .findAll()
@@ -413,6 +414,7 @@ public class OrderService {
                 order.getStatus(),
                 order.getTotalAmount(),
                 order.getCurrency(),
+                order.getPaymentMethod(),
                 address.getStreet(),
                 address.getPostalCode(),
                 address.getCity(),
@@ -437,6 +439,7 @@ public class OrderService {
                         order.getStatus(),
                         order.getTotalAmount(),
                         order.getCurrency(),
+                        order.getPaymentMethod(),
                         order.getDeliveryAddress().getStreet(),
                         order.getDeliveryAddress().getPostalCode(),
                         order.getDeliveryAddress().getCity(),
@@ -482,5 +485,21 @@ public class OrderService {
                     ex
             );
         }
+    }
+
+    @Transactional
+    public Order completeOrder(Long orderId) {
+        Order order =
+                orderRepository.findById(orderId).orElseThrow(()
+                        -> new IllegalArgumentException("Order not found: " + orderId));
+
+        if (order.getStatus() == OrderStatus.COMPLETED) {
+            log.info("Order already completed: orderId={}", orderId);
+            return order;
+        }
+        order.setStatus(OrderStatus.COMPLETED);
+        Order saved = orderRepository.save(order);
+        log.info("Order completed successfully: orderId={}", orderId);
+        return saved;
     }
 }

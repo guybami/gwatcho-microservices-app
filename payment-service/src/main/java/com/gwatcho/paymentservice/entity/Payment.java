@@ -1,103 +1,85 @@
 package com.gwatcho.paymentservice.entity;
 
 import jakarta.persistence.*;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(
-        name = "payments",
-        uniqueConstraints = {
-                @UniqueConstraint(
-                        name = "uk_payment_order_id",
-                        columnNames = "order_id"
-                )
-        }
-)
+@Table(name = "payments")
+@Getter
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Payment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_id", nullable = false)
+    @Column(nullable = false)
     private Long orderId;
 
-    @Column(name = "customer_id", nullable = false)
+    @Column(nullable = false)
     private Long customerId;
 
-    @Column(
-            nullable = false,
-            precision = 19,
-            scale = 2
-    )
+    @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal amount;
 
-    @Column(
-            nullable = false,
-            length = 3
-    )
+    @Column(nullable = false, length = 3)
     private String currency;
 
-    @Enumerated(EnumType.STRING)
-    @Column(
-            nullable = false,
-            length = 20
-    )
-    private PaymentStatus status;
-
-    @Column(
-            name = "payment_method",
-            nullable = false,
-            length = 50
-    )
+    @Column(nullable = false)
     private String paymentMethod;
 
-    @Column(
-            name = "transaction_id",
-            length = 100
-    )
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentStatus status;
+
+    @Column(unique = true)
     private String transactionId;
 
-    @Column(
-            name = "created_at",
-            nullable = false
-    )
+    @Column(nullable = false)
     private LocalDateTime createdAt;
 
-    @Column(
-            name = "updated_at",
-            nullable = false
-    )
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
-
-    protected Payment() {
-        // Required by JPA
-    }
 
     public Payment(
             Long orderId,
             Long customerId,
             BigDecimal amount,
             String currency,
-            PaymentStatus status,
-            String paymentMethod,
-            String transactionId) {
-
+            String paymentMethod
+    ) {
         this.orderId = orderId;
         this.customerId = customerId;
         this.amount = amount;
         this.currency = currency;
-        this.status = status;
         this.paymentMethod = paymentMethod;
-        this.transactionId = transactionId;
+        this.status = PaymentStatus.PENDING;
         this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
+    }
+
+    public void complete(String transactionId) {
+
+        this.status = PaymentStatus.COMPLETED;
+        this.transactionId = transactionId;
         this.updatedAt = LocalDateTime.now();
     }
 
-    @PreUpdate
-    protected void onUpdate() {
+    public void failed(String transactionId) {
+        this.status = PaymentStatus.FAILED;
+        this.transactionId = transactionId;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void pending(String transactionId) {
+        this.status = PaymentStatus.PENDING;
+        this.transactionId = transactionId;
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -121,12 +103,12 @@ public class Payment {
         return currency;
     }
 
-    public PaymentStatus getStatus() {
-        return status;
-    }
-
     public String getPaymentMethod() {
         return paymentMethod;
+    }
+
+    public PaymentStatus getStatus() {
+        return status;
     }
 
     public String getTransactionId() {
@@ -139,13 +121,5 @@ public class Payment {
 
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setStatus(PaymentStatus status) {
-        this.status = status;
-    }
-
-    public void setTransactionId(String transactionId) {
-        this.transactionId = transactionId;
     }
 }

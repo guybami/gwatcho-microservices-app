@@ -71,6 +71,7 @@ class OrderCheckoutIntegrationTest {
                 new CheckoutRequest(
                         100L,
                         "EUR",
+                        "CARD",
                         new DeliveryAddressRequest(
                                 "Main Street 10",
                                 "74172",
@@ -335,6 +336,7 @@ class OrderCheckoutIntegrationTest {
                 new CheckoutRequest(
                         100L,
                         "EUR",
+                        "CARD",
                         new DeliveryAddressRequest(
                                 "Main Street 10",
                                 "74172",
@@ -408,6 +410,7 @@ class OrderCheckoutIntegrationTest {
                 new CheckoutRequest(
                         100L,
                             "EUR",
+                        "CARD",
                         new DeliveryAddressRequest(
                                 "Main Street 10",
                                 "74172",
@@ -465,6 +468,7 @@ class OrderCheckoutIntegrationTest {
                 new CheckoutRequest(
                         100L,
                          "EUR",
+                        "CARD",
                         new DeliveryAddressRequest(
                                 "Main Street 10",
                                 "74172",
@@ -520,6 +524,7 @@ class OrderCheckoutIntegrationTest {
                 new CheckoutRequest(
                         100L,
                                 "EUR",
+                        "CARD",
                         new DeliveryAddressRequest(
                                 "Main Street 10",
                                 "74172",

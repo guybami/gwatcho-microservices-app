@@ -59,6 +59,7 @@ class OrderControllerTest {
                 new CheckoutRequest(
                         100L,
                         "EUR",
+                        "CARD",
                         new DeliveryAddressRequest(
                                 "Main Street 10",
                                 "74172",
@@ -296,6 +297,7 @@ class OrderControllerTest {
                         OrderStatus.CREATED,
                         new BigDecimal("50.00"),
                         "EUR",
+                        "CARD",
 
                         "Second Street 20",
                         "74072",
@@ -369,7 +371,7 @@ class OrderControllerTest {
                         OrderStatus.CANCELLED,
                         new BigDecimal("2425.00"),
                         "EUR",
-
+                         "CARD",
                         "Main Street 10",
                         "74172",
                         "Neckarsulm",
@@ -569,6 +571,7 @@ class OrderControllerTest {
                 OrderStatus.CREATED,
                 new BigDecimal("2425.00"),
                 "EUR",
+                "CARD",
                 "Main Street 10",
                 "74172",
                 "Neckarsulm",

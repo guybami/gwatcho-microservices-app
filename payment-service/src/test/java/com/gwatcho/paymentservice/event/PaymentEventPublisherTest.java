@@ -1,6 +1,7 @@
 package com.gwatcho.paymentservice.event;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gwatcho.paymentservice.dto.DeliveryAddress;
 import com.gwatcho.paymentservice.entity.Payment;
 import com.gwatcho.paymentservice.entity.PaymentStatus;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -43,12 +44,11 @@ class PaymentEventPublisherTest {
                 10L,
                 new BigDecimal("149.99"),
                 "EUR",
-                PaymentStatus.COMPLETED,
-                "CARD",
-                "TX-123"
+                "CARD"
         );
-
-        publisher.publishCompleted(payment);
+        payment.complete("TX-123");
+        publisher.publishCompleted(payment, new DeliveryAddress("Main Street 10",
+                "74172", "Neckarsulm", "DE"));
 
         ArgumentCaptor<ProducerRecord<String, String>>
                 captor =
@@ -86,15 +86,16 @@ class PaymentEventPublisherTest {
     @Test
     void publishFailed_sendsCorrectKafkaRecord() {
 
+
         Payment payment = new Payment(
                 100L,
                 10L,
                 new BigDecimal("149.99"),
                 "EUR",
-                PaymentStatus.FAILED,
-                "CARD",
-                null
+                "CARD"
         );
+
+        payment.failed("TX-123");
 
         publisher.publishFailed(
                 payment,

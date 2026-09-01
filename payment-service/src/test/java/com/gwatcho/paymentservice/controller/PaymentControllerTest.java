@@ -3,6 +3,7 @@ package com.gwatcho.paymentservice.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gwatcho.paymentservice.dto.PaymentRequest;
 import com.gwatcho.paymentservice.dto.PaymentResponse;
+import com.gwatcho.paymentservice.entity.Payment;
 import com.gwatcho.paymentservice.entity.PaymentStatus;
 import com.gwatcho.paymentservice.exception.GlobalExceptionHandler;
 import com.gwatcho.paymentservice.exception.ResourceNotFoundException;
@@ -39,26 +40,28 @@ class PaymentControllerTest {
     @Test
     void createPayment_returns201() throws Exception {
 
-        PaymentRequest request = new PaymentRequest(
-                100L,
-                10L,
-                new BigDecimal("149.99"),
-                "EUR",
-                "CARD"
-        );
 
-        PaymentResponse response = new PaymentResponse(
-                1L,
-                100L,
-                10L,
-                new BigDecimal("149.99"),
-                "EUR",
-                PaymentStatus.COMPLETED,
-                "CARD",
-                "TX-123",
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
+
+        PaymentRequest request =
+                new PaymentRequest(
+                        100L,
+                        10L,
+                        new BigDecimal("149.99"),
+                        "EUR",
+                        "CARD"
+                );
+
+        Payment response =
+                new Payment(
+                        100L,
+                        10L,
+                        new BigDecimal("149.99"),
+                        "EUR",
+                        "CARD"
+                );
+
+        response.complete("TX-123");
+
 
         when(paymentService.createPayment(request))
                 .thenReturn(response);
@@ -159,8 +162,29 @@ class PaymentControllerTest {
                 LocalDateTime.now()
         );
 
+        PaymentRequest request =
+                new PaymentRequest(
+                        100L,
+                        10L,
+                        new BigDecimal("149.99"),
+                        "EUR",
+                        "CARD"
+                );
+
+        Payment response2 =
+                new Payment(
+                        100L,
+                        10L,
+                        new BigDecimal("149.99"),
+                        "EUR",
+                        "CARD"
+                );
+
+        response2.complete("TX-123");
+
+
         when(paymentService.getPayment(1L))
-                .thenReturn(response);
+                .thenReturn(response2);
 
         mockMvc.perform(get("/payments/1"))
                 .andExpect(status().isOk())

@@ -36,6 +36,9 @@ public class Order {
     @Column(nullable = false, length = 3)
     private String currency;
 
+    @Column(name = "payment_method", nullable = false, length = 50)
+    private String paymentMethod;
+
     @Embedded
     private DeliveryAddress deliveryAddress;
 
