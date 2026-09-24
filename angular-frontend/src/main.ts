@@ -1,21 +1,7 @@
-import { provideZoneChangeDetection } from "@angular/core";
 import { bootstrapApplication } from '@angular/platform-browser';
-import { appConfig } from './app/app.config';
+
 import { AppComponent } from './app/app.component';
-import { AuthService } from './app/core/auth/auth.service';
+import { appConfig } from './app/app.config';
 
-async function bootstrap() {
-
-  const authService = new AuthService();
-
-  await authService.init();
-
-  await bootstrapApplication(
-    AppComponent,
-    {...appConfig, providers: [provideZoneChangeDetection(), ...appConfig.providers]}
-  );
-}
-
-bootstrap().catch(error => {
-  console.error('Angular bootstrap failed', error);
-});
+bootstrapApplication(AppComponent, appConfig)
+  .catch(err => console.error('Angular bootstrap failed', err));

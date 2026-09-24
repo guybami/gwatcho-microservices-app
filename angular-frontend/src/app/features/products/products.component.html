@@ -7,7 +7,7 @@
     </p>
   </div>
 
-  @if (loading) {
+  @if (loading == true) {
     <div class="loading">
       Loading products...
     </div>
@@ -19,7 +19,7 @@
     </div>
   }
 
-  @if (!loading && !errorMessage) {
+
     <div class="product-grid">
 
       @for (product of products; track product.id) {
@@ -67,6 +67,6 @@
 
     </div>
 
-  }
+
 
 </section>

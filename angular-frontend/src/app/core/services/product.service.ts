@@ -14,6 +14,7 @@ export class ProductService {
   private readonly apiUrl = '/api/products';
 
   getProducts(): Observable<Product[]> {
+    console.log('Calling:', this.apiUrl);
     return this.http.get<Product[]>(this.apiUrl);
   }
 

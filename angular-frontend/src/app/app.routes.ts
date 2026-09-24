@@ -1,12 +1,8 @@
 import { Routes } from '@angular/router';
 
-export const routes: Routes = [
+import { authGuard } from './core/guards/auth.guard';
 
-  {
-    path: '',
-    redirectTo: 'home',
-    pathMatch: 'full'
-  },
+export const routes: Routes = [
 
   {
     path: 'home',
@@ -21,12 +17,14 @@ export const routes: Routes = [
       import('./features/products/products.component')
         .then(m => m.ProductsComponent)
   },
+
   {
     path: 'products/:id',
     loadComponent: () =>
       import('./features/products/product-details/product-details.component')
         .then(m => m.ProductDetailsComponent)
   },
+
   {
     path: 'cart',
     loadComponent: () =>
@@ -34,18 +32,37 @@ export const routes: Routes = [
         .then(m => m.CartComponent)
   },
 
+  // 🔐 Authentication required
   {
     path: 'checkout',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/checkout/checkout.component')
         .then(m => m.CheckoutComponent)
   },
 
+  // 🔐 Authentication required
   {
     path: 'orders',
+    canActivate: [authGuard],
     loadComponent: () =>
       import('./features/orders/orders.component')
         .then(m => m.OrdersComponent)
+  },
+
+  // 🔐 Authentication required
+  {
+    path: 'profile',
+    canActivate: [authGuard],
+    loadComponent: () =>
+      import('./features/profile/profile.component')
+        .then(m => m.ProfileComponent)
+  },
+
+  {
+    path: '',
+    redirectTo: 'home',
+    pathMatch: 'full'
   },
 
   {

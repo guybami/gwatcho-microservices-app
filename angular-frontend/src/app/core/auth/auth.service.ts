@@ -1,75 +1,50 @@
-import { Injectable } from '@angular/core';
-import Keycloak from 'keycloak-js';
-import { keycloakConfig } from './keycloak.config';
+import { Injectable, inject } from '@angular/core';
+import { KeycloakService } from './keycloak.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
-  private readonly keycloak = new Keycloak(keycloakConfig);
+  private readonly keycloak = inject(KeycloakService);
 
-  private initialized = false;
-
-  async init(): Promise<boolean> {
-
-    if (this.initialized) {
-      return this.keycloak.authenticated ?? false;
-    }
-
-    const authenticated = await this.keycloak.init({
-      onLoad: 'check-sso',
-      pkceMethod: 'S256',
-      checkLoginIframe: false
-    });
-
-    this.initialized = true;
-
-    return authenticated;
+  init(): Promise<boolean> {
+    return this.keycloak.init();
   }
 
-  async login(): Promise<void> {
-    await this.keycloak.login({
-      redirectUri: window.location.origin
-    });
+  login(): Promise<void> {
+    return this.keycloak.login();
   }
 
-  async logout(): Promise<void> {
-    await this.keycloak.logout({
-      redirectUri: window.location.origin
-    });
+  logout(): Promise<void> {
+    return this.keycloak.logout();
   }
 
   isAuthenticated(): boolean {
-    return this.keycloak.authenticated ?? false;
+    return this.keycloak.isAuthenticated();
   }
 
   getToken(): string | undefined {
-    return this.keycloak.token;
+    return this.keycloak.getToken();
+  }
+
+  updateToken(minValidity = 30): Promise<boolean> {
+    return this.keycloak.updateToken(minValidity);
   }
 
   getUsername(): string | undefined {
-    return this.keycloak.tokenParsed?.['preferred_username'];
+    return this.keycloak.getUsername();
   }
 
   getEmail(): string | undefined {
-    return this.keycloak.tokenParsed?.['email'];
+    return this.keycloak.getEmail();
   }
 
   getFirstName(): string | undefined {
-    return this.keycloak.tokenParsed?.['given_name'];
+    return this.keycloak.getFirstName();
   }
 
   getLastName(): string | undefined {
-    return this.keycloak.tokenParsed?.['family_name'];
-  }
-
-  async updateToken(): Promise<boolean> {
-    try {
-      return await this.keycloak.updateToken(30);
-    } catch (error) {
-      console.error('Failed to refresh Keycloak token', error);
-      return false;
-    }
+    return this.keycloak.getLastName();
   }
 }
