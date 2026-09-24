@@ -6,14 +6,13 @@ import { CartService } from '../../core/services/cart.service';
 import { CartItem } from '../../core/models/cart-item.model';
 
 @Component({
-  selector: 'app-cart',
-  standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink
-  ],
-  templateUrl: './cart.component.html',
-  styleUrl: './cart.component.scss'
+    selector: 'app-cart',
+    imports: [
+        CommonModule,
+        RouterLink
+    ],
+    templateUrl: './cart.component.html',
+    styleUrl: './cart.component.scss'
 })
 export class CartComponent implements OnInit {
 

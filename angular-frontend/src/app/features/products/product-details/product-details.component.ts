@@ -7,14 +7,13 @@ import { Product } from '../../../core/models/product.model';
 import { CartService } from '../../../core/services/cart.service';
 
 @Component({
-  selector: 'app-product-details',
-  standalone: true,
-  imports: [
-    CommonModule,
-    RouterLink
-  ],
-  templateUrl: './product-details.component.html',
-  styleUrl: './product-details.component.scss'
+    selector: 'app-product-details',
+    imports: [
+        CommonModule,
+        RouterLink
+    ],
+    templateUrl: './product-details.component.html',
+    styleUrl: './product-details.component.scss'
 })
 export class ProductDetailsComponent implements OnInit {
 
