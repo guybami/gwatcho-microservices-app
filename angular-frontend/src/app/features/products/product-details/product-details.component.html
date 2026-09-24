@@ -1,0 +1,170 @@
+
+<section class="product-details-page">
+
+  <button
+    type="button"
+    class="back-button"
+    (click)="goBack()">
+
+    ← Back to Products
+
+  </button>
+
+
+  @if (loading) {
+
+    <div class="loading">
+      Loading product...
+    </div>
+
+  }
+
+
+  @if (errorMessage) {
+
+    <div class="error">
+      {{ errorMessage }}
+    </div>
+
+  }
+
+
+  @if (!loading && product) {
+
+    <div class="product-details">
+
+      <div class="product-image">
+
+        <div class="image-placeholder">
+          {{ product.category }}
+        </div>
+
+      </div>
+
+
+      <div class="product-information">
+
+        <div class="category">
+          {{ product.category }}
+        </div>
+
+        <h1>
+          {{ product.name }}
+        </h1>
+
+        <div class="sku">
+          SKU: {{ product.sku }}
+        </div>
+
+        <p class="description">
+          {{ product.description }}
+        </p>
+
+
+        <div class="price">
+          {{ product.price | currency:product.currency }}
+        </div>
+
+
+        <div class="stock"
+             [class.out-of-stock]="product.stockQuantity <= 0">
+
+          @if (product.stockQuantity > 0) {
+            In stock: {{ product.stockQuantity }}
+          } @else {
+            Out of stock
+          }
+
+        </div>
+
+
+        <div class="actions">
+
+          <div class="quantity-selector">
+
+            <button
+              type="button"
+              (click)="decreaseQuantity()"
+              [disabled]="quantity <= 1">
+
+              −
+
+            </button>
+
+            <span>
+      {{ quantity }}
+    </span>
+
+            <button
+              type="button"
+              (click)="increaseQuantity()"
+              [disabled]="quantity >= product.stockQuantity">
+              +
+            </button>
+          </div>
+
+          <button
+            type="button"
+            class="add-cart-button"
+            [disabled]="product.stockQuantity <= 0"
+            (click)="addToCart()">
+            Add to Cart
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="product-meta">
+      <h2>Product Information</h2>
+
+      <div class="meta-grid">
+
+        <div>
+          <span>Product ID</span>
+          <strong>{{ product.id }}</strong>
+        </div>
+
+        <div>
+          <span>SKU</span>
+          <strong>{{ product.sku }}</strong>
+        </div>
+
+        <div>
+          <span>Category</span>
+          <strong>{{ product.category }}</strong>
+        </div>
+
+        <div>
+          <span>Status</span>
+          <strong>{{ product.status }}</strong>
+        </div>
+
+        <div>
+          <span>Available Stock</span>
+          <strong>{{ product.stockQuantity }}</strong>
+        </div>
+
+        <div>
+          <span>Version</span>
+          <strong>{{ product.version }}</strong>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="navigation">
+
+      <a routerLink="/products">
+        ← Continue Shopping
+      </a>
+
+    </div>
+
+  }
+
+</section>

@@ -1,0 +1,72 @@
+<section class="products-page">
+
+  <div class="page-header">
+    <h1>Products</h1>
+    <p>
+      Browse our available products.
+    </p>
+  </div>
+
+  @if (loading) {
+    <div class="loading">
+      Loading products...
+    </div>
+  }
+
+  @if (errorMessage) {
+    <div class="error">
+      {{ errorMessage }}
+    </div>
+  }
+
+  @if (!loading && !errorMessage) {
+    <div class="product-grid">
+
+      @for (product of products; track product.id) {
+
+        <article class="product-card"  [routerLink]="['/products', product.id]">
+
+          <div class="product-category">
+            {{ product.category }}
+          </div>
+
+          <h2>
+            <a [routerLink]="['/products', product.id]">
+              {{ product.name }}
+            </a>
+          </h2>
+
+          <p class="sku">
+            SKU: {{ product.sku }}
+          </p>
+
+          <p class="description">
+            {{ product.description }}
+          </p>
+
+          <div class="product-info">
+
+            <span class="price">
+              {{ product.price | currency:product.currency }}
+            </span>
+
+            <span class="stock">
+              Stock: {{ product.stockQuantity }}
+            </span>
+
+          </div>
+
+          <button
+            type="button"
+            [disabled]="product.stockQuantity <= 0">
+            Add to Cart
+          </button>
+        </article>
+
+      }
+
+    </div>
+
+  }
+
+</section>

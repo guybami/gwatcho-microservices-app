@@ -1,0 +1,135 @@
+<section class="cart-page">
+
+  <div class="page-header">
+    <h1>Shopping Cart</h1>
+    <a routerLink="/products">
+      ← Continue Shopping
+    </a>
+  </div>
+
+
+  @if (items.length === 0) {
+    <div class="empty-cart">
+      <h2>Your cart is empty</h2>
+      <p>
+        Browse our products and add something to your cart.
+      </p>
+      <a
+        routerLink="/products"
+        class="shop-button">
+        Browse Products
+      </a>
+    </div>
+  } @else {
+    <div class="cart-content">
+      <div class="cart-items">
+        @for (item of items; track item.product.id) {
+          <article class="cart-item">
+            <div class="item-info">
+              <h2>
+                {{ item.product.name }}
+              </h2>
+              <span>
+                SKU: {{ item.product.sku }}
+              </span>
+            </div>
+            <div class="item-price">
+              {{ item.product.price |
+              currency:item.product.currency }}
+            </div>
+
+
+            <div class="quantity-selector">
+
+              <button
+                type="button"
+                (click)="decrease(item.product.id)"
+                [disabled]="item.quantity <= 1">
+                −
+              </button>
+              <span>
+                {{ item.quantity }}
+              </span>
+
+              <button
+                type="button"
+                (click)="increase(item.product.id)"
+                [disabled]="item.quantity >= item.product.stockQuantity">
+                +
+              </button>
+
+            </div>
+
+
+            <div class="item-total">
+              {{
+                item.product.price * item.quantity
+                  | currency:item.product.currency
+              }}
+            </div>
+
+
+            <button
+              type="button"
+              class="remove-button"
+              (click)="remove(item.product.id)">
+
+              Remove
+
+            </button>
+
+          </article>
+
+        }
+
+      </div>
+
+
+      <aside class="cart-summary">
+
+        <h2>Order Summary</h2>
+
+        <div class="summary-row">
+
+          <span>Items</span>
+
+          <span>{{ items.length }}</span>
+
+        </div>
+
+        <div class="summary-row total">
+
+          <span>Total</span>
+
+          <span>
+            {{ total | currency:'EUR' }}
+          </span>
+
+        </div>
+
+
+        <a
+          routerLink="/checkout"
+          class="checkout-button">
+
+          Proceed to Checkout
+
+        </a>
+
+
+        <button
+          type="button"
+          class="clear-button"
+          (click)="clear()">
+
+          Clear Cart
+
+        </button>
+
+      </aside>
+
+    </div>
+
+  }
+
+</section>

@@ -1,0 +1,50 @@
+<header class="navbar">
+
+  <div class="logo">
+    GWatcho <span>Smart Shop</span>
+  </div>
+
+  <nav>
+
+    <a routerLink="/home">Home</a>
+    <a routerLink="/products">Products</a>
+    <a routerLink="/cart">Cart</a>
+    <a routerLink="/orders">Orders</a>
+
+    @if (authService.isAuthenticated()) {
+      <button type="button" (click)="logout()">
+        Logout
+      </button>
+    } @else {
+      <button type="button" (click)="login()">
+        Login
+      </button>
+    }
+
+  </nav>
+
+  <router-outlet></router-outlet>
+
+  <div class="actions">
+
+    <button class="login-button">
+      Login
+    </button>
+
+  </div>
+
+</header>
+
+<main class="content">
+
+  <router-outlet></router-outlet>
+
+</main>
+
+<footer>
+
+  <p>
+    © 2026 GWatcho Smart Shop
+  </p>
+
+</footer>
