@@ -1,72 +1,80 @@
 <section class="products-page">
 
-  <div class="page-header">
-    <h1>Products</h1>
-    <p>
-      Browse our available products.
-    </p>
-  </div>
+  <h1>Products</h1>
 
-  @if (loading == true) {
+  @if (loading()) {
     <div class="loading">
       Loading products...
     </div>
-  }
-
-  @if (errorMessage) {
+  } @else if (hasError()) {
     <div class="error">
-      {{ errorMessage }}
+      <h2>Unable to load products</h2>
+      <p>
+        An error occurred while loading the products.
+      </p>
     </div>
-  }
 
+  } @else {
+    <div class="products-header">
+      <h2>Available Products</h2>
+      <span>
+        {{ products().length }} products
+      </span>
 
-    <div class="product-grid">
+    </div>
 
-      @for (product of products; track product.id) {
+    @if (products().length === 0) {
 
-        <article class="product-card"  [routerLink]="['/products', product.id]">
+      <p>No products found.</p>
 
-          <div class="product-category">
-            {{ product.category }}
-          </div>
+    } @else {
 
-          <h2>
-            <a [routerLink]="['/products', product.id]">
-              {{ product.name }}
-            </a>
-          </h2>
+      <div class="product-grid">
 
-          <p class="sku">
-            SKU: {{ product.sku }}
-          </p>
+        @for (product of products(); track product.id) {
+          <article class="product-card"  [routerLink]="['/products', product.id]">
 
-          <p class="description">
-            {{ product.description }}
-          </p>
+            <div class="product-category">
+              {{ product.category }}
+            </div>
 
-          <div class="product-info">
+            <h2>
+              <a [routerLink]="['/products', product.id]">
+                {{ product.name }}
+              </a>
+            </h2>
+
+            <p class="sku">
+              SKU: {{ product.sku }}
+            </p>
+
+            <p class="description">
+              {{ product.description }}
+            </p>
+
+            <div class="product-info">
 
             <span class="price">
               {{ product.price | currency:product.currency }}
             </span>
 
-            <span class="stock">
+              <span class="stock">
               Stock: {{ product.stockQuantity }}
             </span>
 
-          </div>
+            </div>
 
-          <button
-            type="button"
-            [disabled]="product.stockQuantity <= 0">
-            Add to Cart
-          </button>
-        </article>
+            <button
+              type="button"
+              [disabled]="product.stockQuantity <= 0">
+              Add to Cart
+            </button>
+          </article>
 
-      }
+        }
 
-    </div>
-
-
+      </div>
+    }
+  }
 
 </section>

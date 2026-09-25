@@ -31,7 +31,7 @@ import org.springframework.http.ResponseEntity;
 class OrderPaymentDeliveryEndToEndTest {
     private static final String KAFKA_BOOTSTRAP_SERVERS = "localhost:9092";
 
-    private static final String PRODUCT_SERVICE_URL = "http://localhost:8081/product-service";
+    private static final String PRODUCT_SERVICE_URL = "http://localhost:8083/product-service";
 
     private static final String DELIVERY_SERVICE_URL = "http://localhost:8084/delivery-service";
 

@@ -1,19 +1,18 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule, Location } from '@angular/common';
+import {Component, OnInit, inject, signal} from '@angular/core';
+import {CommonModule, CurrencyPipe, Location} from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 
 import { ProductService } from '../../../core/services/product.service';
 import { Product } from '../../../core/models/product.model';
 import { CartService } from '../../../core/services/cart.service';
 
+
 @Component({
-    selector: 'app-product-details',
-    imports: [
-        CommonModule,
-        RouterLink
-    ],
-    templateUrl: './product-details.component.html',
-    styleUrl: './product-details.component.scss'
+  selector: 'app-product-details',
+  standalone: true,
+  imports: [RouterLink, CurrencyPipe],
+  templateUrl: './product-details.component.html',
+  styleUrl: './product-details.component.scss'
 })
 export class ProductDetailsComponent implements OnInit {
 
@@ -22,44 +21,89 @@ export class ProductDetailsComponent implements OnInit {
   private readonly location = inject(Location);
   private readonly cartService = inject(CartService);
 
-  product?: Product;
-  quantity = 1;
+  readonly product = signal<Product | null>(null);
+  readonly loading = signal(true);
+  readonly hasError = signal(false);
 
-  loading = false;
-  errorMessage = '';
+  readonly cart = this.cartService.cart;
+  readonly itemCount = this.cartService.itemCount;
+  readonly total = this.cartService.total;
+
+  quantity = signal(1);
+  errorMessage = signal('');
+
+  constructor() {
+    this.loadProduct();
+  }
 
   ngOnInit(): void {
+  }
 
-    const id = Number(this.route.snapshot.paramMap.get('id'));
+  private loadProduct(): void {
 
-    if (!id || id <= 0) {
-      this.errorMessage = 'Invalid product ID.';
+    this.loading.set(true);
+    this.hasError.set(false);
+    this.product.set(null);
+
+    const idParam = this.route.snapshot.paramMap.get('id');
+
+    if (!idParam) {
+      console.error('Product ID is missing');
+
+      this.loading.set(false);
+      this.hasError.set(true);
+
       return;
     }
 
-    this.loadProduct(id);
-  }
+    const productId = Number(idParam);
 
-  private loadProduct(id: number): void {
+    if (Number.isNaN(productId)) {
+      console.error('Invalid product ID:', idParam);
 
-    this.loading = true;
-    this.errorMessage = '';
+      this.loading.set(false);
+      this.hasError.set(true);
 
-    this.productService.getProductById(id).subscribe({
+      return;
+    }
 
-      next: product => {
-        this.product = product;
-        this.loading = false;
+    console.log('Loading product:', productId);
+
+    this.productService.getProductById(productId).subscribe({
+
+      next: (product: Product) => {
+
+        console.log('Product received:', product);
+
+        this.product.set(product);
+
+        this.loading.set(false);
+        this.hasError.set(false);
+
+        console.log('loading =', this.loading());
+        console.log('hasError =', this.hasError());
+        console.log('product =', this.product());
       },
 
-      error: error => {
-        console.error('Error loading product:', error);
+      error: (error) => {
 
-        this.errorMessage =
-          'Unable to load the product. Please try again later.';
-        this.loading = false;
+        console.error(
+          `Failed to load product ${productId}:`,
+          error
+        );
+
+        this.product.set(null);
+
+        this.loading.set(false);
+        this.hasError.set(true);
+
+        console.log('loading =', this.loading());
+        console.log('hasError =', this.hasError());
+      },
+
+      complete: () => {
+        console.log('Product HTTP Observable completed');
       }
-
     });
   }
 
@@ -68,37 +112,37 @@ export class ProductDetailsComponent implements OnInit {
   }
 
   addToCart(): void {
-
-    if (!this.product) {
+    const product = this.product();
+    if (!product) {
       return;
     }
 
     this.cartService.addToCart(
-      this.product,
-      this.quantity
+      product,
+      this.quantity()
     );
 
     console.log(
-      `${this.quantity} x ${this.product.name} added to cart`
+      `Added ${this.quantity()} x ${product.name} to cart`
     );
-
   }
 
   increaseQuantity(): void {
-
-    if (!this.product) {
+    const product = this.product();
+    if (!product) {
       return;
     }
-
-    if (this.quantity < this.product.stockQuantity) {
-      this.quantity++;
+    if (this.quantity() < product.stockQuantity) {
+      this.quantity.set(this.quantity() + 1);
     }
   }
 
   decreaseQuantity(): void {
 
-    if (this.quantity > 1) {
-      this.quantity--;
+    if (this.quantity() > 1) {
+      this.quantity.set(this.quantity() - 1);
     }
   }
+
+
 }

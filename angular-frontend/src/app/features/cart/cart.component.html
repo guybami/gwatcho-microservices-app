@@ -8,7 +8,7 @@
   </div>
 
 
-  @if (items.length === 0) {
+  @if (items().length === 0) {
     <div class="empty-cart">
       <h2>Your cart is empty</h2>
       <p>
@@ -23,7 +23,7 @@
   } @else {
     <div class="cart-content">
       <div class="cart-items">
-        @for (item of items; track item.product.id) {
+        @for (item of items(); track item.product.id) {
           <article class="cart-item">
             <div class="item-info">
               <h2>
@@ -81,51 +81,32 @@
           </article>
 
         }
-
       </div>
-
-
       <aside class="cart-summary">
-
         <h2>Order Summary</h2>
-
         <div class="summary-row">
-
           <span>Items</span>
-
-          <span>{{ items.length }}</span>
-
+          <span>{{ items().length }}</span>
         </div>
 
         <div class="summary-row total">
-
           <span>Total</span>
-
           <span>
-            {{ total | currency:'EUR' }}
+            {{ total() | currency:'EUR' }}
           </span>
 
         </div>
-
-
         <a
           routerLink="/checkout"
           class="checkout-button">
-
           Proceed to Checkout
-
         </a>
-
-
         <button
           type="button"
           class="clear-button"
           (click)="clear()">
-
           Clear Cart
-
         </button>
-
       </aside>
 
     </div>

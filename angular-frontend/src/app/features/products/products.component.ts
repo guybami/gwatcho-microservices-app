@@ -1,47 +1,62 @@
-import { Component, OnInit, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Component, inject, signal } from '@angular/core';
 import { ProductService } from '../../core/services/product.service';
 import { Product } from '../../core/models/product.model';
-
+import {RouterLink} from "@angular/router";
+import {CurrencyPipe} from "@angular/common";
 
 @Component({
   selector: 'app-products',
-  imports: [CommonModule, RouterLink],
-  templateUrl: './products.component.html',
   standalone: true,
+  templateUrl: './products.component.html',
+  imports: [
+    RouterLink,
+    CurrencyPipe
+  ],
   styleUrl: './products.component.scss'
 })
-export class ProductsComponent implements OnInit {
+export class ProductsComponent {
 
   private readonly productService = inject(ProductService);
+  readonly products = signal<Product[]>([]);
+  readonly loading = signal(true);
+  readonly hasError = signal(false);
 
-  products: Product[] = [];
-  loading = false;
-  errorMessage = '';
-  error: string = '';
-
-  ngOnInit(): void {
-    console.log('ProductsComponent initialized');
+  constructor() {
     this.loadProducts();
   }
 
-  loadProducts(): void {
-    this.loading = true;
-    this.productService.getProducts().subscribe({
-      next: (products) => {
-        console.log('Products received:', products);
-        console.log('Number of products:', products.length);
+  private loadProducts(): void {
 
-        this.products = products;
-        this.loading = false;
+    console.log('Starting product loading...');
+
+    // Initial state
+    this.loading.set(true);
+    this.hasError.set(false);
+    this.products.set([]);
+
+    this.productService.getProducts().subscribe({
+
+      next: (products: Product[]) => {
+        console.log('Products received:', products.length);
+        this.products.set(products);
+        this.loading.set(false);
+        this.hasError.set(false);
+        //console.log('loading =', this.loading());
+        //console.log('hasError =', this.hasError());
+        //console.log('products =', this.products().length);
       },
 
       error: (error) => {
-        console.error('Failed to load products:', error);
+        console.error('Product request failed:', error);
+        this.products.set([]);
+        this.loading.set(false);
+        this.hasError.set(true);
+        console.log('loading =', this.loading());
+        console.log('hasError =', this.hasError());
+      },
 
-        this.error  = 'Unable to load products.';
-        this.loading = false;
+      complete: () => {
+        console.log('Product HTTP Observable completed');
       }
     });
   }

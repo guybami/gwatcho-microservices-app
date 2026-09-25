@@ -1,50 +1,122 @@
-<header class="navbar">
+<header class="app-header">
 
-  <div class="logo">
-    GWatcho <span>Smart Shop</span>
-  </div>
+  <div class="header-container">
+    <!-- Logo -->
+    <a
+      routerLink="/home"
+      class="logo">
+      GWatcho Smart Shop
+    </a>
 
-  <nav>
 
-    <a routerLink="/home">Home</a>
-    <a routerLink="/products">Products</a>
-    <a routerLink="/cart">Cart</a>
-    <a routerLink="/orders">Orders</a>
+    <!-- Main navigation -->
+    <nav class="main-nav">
+      <a
+        routerLink="/home"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: true }">
+        Home
+      </a>
 
-    @if (authService.isAuthenticated()) {
-      <button type="button" (click)="logout()">
-        Logout
-      </button>
-    } @else {
-      <button type="button" (click)="login()">
-        Login
-      </button>
-    }
+      <a
+        routerLink="/products"
+        routerLinkActive="active">
+        Products
+      </a>
 
-  </nav>
+      <a
+        routerLink="/orders"
+        routerLinkActive="active">
+        Orders
+      </a>
 
-  <router-outlet></router-outlet>
+      <a
+        routerLink="/profile"
+        routerLinkActive="active">
+        Profile
+      </a>
 
-  <div class="actions">
+    </nav>
 
-    <button class="login-button" (click)="login()">
-      Login
-    </button>
+
+    <!-- Right side -->
+    <div class="header-actions">
+      <!-- Cart -->
+      <a
+        routerLink="/cart"
+        class="cart-link"
+        routerLinkActive="active">
+        🛒 Cart
+        @if (cartService.itemCount() > 0) {
+          <span class="cart-count">
+            {{ cartService.itemCount() }}
+          </span>
+        }
+      </a>
+
+
+      <!-- Authentication -->
+      @if (authService.isAuthenticated()) {
+        <div class="user-section">
+          <span class="username">
+            {{ authService.getUsername() }}
+          </span>
+
+          <button
+            type="button"
+            class="logout-button"
+            (click)="logout()">
+            Logout
+          </button>
+        </div>
+
+      } @else {
+
+        <button
+          type="button"
+          class="login-button"
+          (click)="login()">
+          Login
+        </button>
+      }
+
+    </div>
 
   </div>
 
 </header>
 
-<main class="content">
 
-  <router-outlet></router-outlet>
-
+<!-- Main content -->
+<main class="app-main">
+  <router-outlet />
 </main>
 
-<footer>
+<!-- Footer -->
+<footer class="app-footer">
+  <div class="footer-container">
+    <p>
+      © 2026 GWatcho Smart Shop
+    </p>
 
-  <p>
-    © 2026 GWatcho Smart Shop
-  </p>
+    <div class="footer-links">
+      <a routerLink="/home">
+        Home
+      </a>
+
+      <a routerLink="/products">
+        Products
+      </a>
+
+      <a routerLink="/cart">
+        Cart
+      </a>
+
+      <a routerLink="/profile">
+        Profile
+      </a>
+    </div>
+
+  </div>
 
 </footer>

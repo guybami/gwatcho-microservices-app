@@ -1,5 +1,5 @@
 import { Component, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import {RouterLink, RouterLinkActive, RouterOutlet} from '@angular/router';
 
 import { AuthService } from './core/auth/auth.service';
 import { CartService } from './core/services/cart.service';
@@ -8,7 +8,8 @@ import { CartService } from './core/services/cart.service';
   selector: 'app-root',
   imports: [
     RouterLink,
-    RouterOutlet
+    RouterOutlet,
+    RouterLinkActive
   ],
   templateUrl: './app.component.html',
   standalone: true,
@@ -18,6 +19,7 @@ export class AppComponent {
 
   readonly authService = inject(AuthService);
   readonly cartService = inject(CartService);
+  readonly cartItemCount = this.cartService.itemCount;
 
   constructor() {
     console.log('Authenticated:', this.authService.isAuthenticated());
@@ -34,7 +36,5 @@ export class AppComponent {
     await this.authService.logout();
   }
 
-  get cartItemCount(): number {
-    return this.cartService.getItemCount();
-  }
+
 }
