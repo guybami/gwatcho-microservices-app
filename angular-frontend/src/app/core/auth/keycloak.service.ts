@@ -11,6 +11,17 @@ export class KeycloakService {
 
   constructor() {
     this.keycloak = new Keycloak(keycloakConfig);
+    this.keycloak.onAuthRefreshSuccess = () => {
+      console.log('Keycloak access token refreshed successfully');
+    };
+
+    this.keycloak.onAuthRefreshError = () => {
+      console.error('Keycloak access token refresh failed');
+    };
+
+    this.keycloak.onTokenExpired = () => {
+      console.warn('Keycloak access token expired');
+    };
   }
 
   async init(): Promise<boolean> {
@@ -46,6 +57,7 @@ export class KeycloakService {
       return await this.keycloak.updateToken(minValidity);
     } catch (error) {
       console.error('Unable to refresh Keycloak token', error);
+      await this.logout();
       return false;
     }
   }

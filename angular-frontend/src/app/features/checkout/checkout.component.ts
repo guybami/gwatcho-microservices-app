@@ -9,6 +9,8 @@ import { UserService } from '../../core/services/user.service';
 import { CheckoutService } from '../../core/services/checkout.service';
 
 import { Customer } from '../../core/models/customer.model';
+import {OrderService} from "../../core/services/order.service";
+import {CheckoutRequest} from "../../core/models/checkout.model";
 
 @Component({
   selector: 'app-checkout',
@@ -25,12 +27,9 @@ import { Customer } from '../../core/models/customer.model';
 export class CheckoutComponent implements OnInit {
 
   readonly cartService = inject(CartService);
-
-  private readonly userService =
-    inject(UserService);
-
-  readonly checkoutService =
-    inject(CheckoutService);
+  private readonly userService =  inject(UserService);
+  readonly checkoutService =   inject(CheckoutService);
+  private readonly orderService = inject(OrderService);
 
   /**
    * Cart signals
@@ -47,32 +46,38 @@ export class CheckoutComponent implements OnInit {
   /**
    * Checkout state
    */
-  readonly customer =
-    this.checkoutService.customer;
-
-  readonly loadingCustomer =
-    this.checkoutService.loading;
-
-  readonly customerError =
-    this.checkoutService.error;
+  readonly customer = this.checkoutService.customer;
+  readonly loadingCustomer = this.checkoutService.loading;
+  readonly customerError = this.checkoutService.error;
 
   /**
-   * UI state
+   * UI state signals
    */
   showCheckoutForm = signal(false);
   submitting = signal(false);
   hasError = signal(false);
   errorMessage = signal('');
+  private customerId: number = -1;
+  savingAddress = signal(false);
 
   /**
    * Delivery address
    */
-  deliveryAddress = {
+  deliveryAddress: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    street: string;
+    houseNumber: string;
+    postalCode: string;
+    city: string;
+    country: string;
+  } = {
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
-
     street: '',
     houseNumber: '',
     postalCode: '',
@@ -81,7 +86,6 @@ export class CheckoutComponent implements OnInit {
   };
 
   ngOnInit(): void {
-
     this.loadCustomer();
   }
 
@@ -91,39 +95,76 @@ export class CheckoutComponent implements OnInit {
   private loadCustomer(): void {
 
     this.checkoutService.setLoading(true);
+    this.userService.getCurrentCustomer().subscribe({
+      next: (customer: Customer) => {
+        //console.log('Customer loaded:', customer);
+        this.customerId = customer.id;
+        this.checkoutService.setCustomer(customer);
+        this.populateDeliveryAddress(customer);
 
-    this.userService
-      .getCurrentCustomer()
-      .subscribe({
+        this.checkoutService.setLoading(false);
+      },
+      error: error => {
+        console.error('Failed to load customer', error);
+        this.checkoutService.setLoading(false);
+        this.checkoutService.setError(
+          'Unable to load your customer profile.'
+        );
+        this.hasError.set(true);
+        this.errorMessage.set(
+          'Unable to load your customer profile.'
+        );
+      }
+    });
+  }
 
-        next: (customer: Customer) => {
+  /**
+   * Save customer address
+   */
+  saveCustomerAddress(): void {
 
-          this.checkoutService.setCustomer(customer);
+    this.submitting.set(true);
+    this.hasError.set(false);
+    this.errorMessage.set('');
 
-          this.populateDeliveryAddress(customer);
+    this.userService.updateCustomer({
 
-          this.checkoutService.setLoading(false);
-        },
+      firstName: this.deliveryAddress.firstName,
+      lastName: this.deliveryAddress.lastName,
+      phone: this.deliveryAddress.phone,
 
-        error: (error) => {
+      street: this.deliveryAddress.street,
+      houseNumber: this.deliveryAddress.houseNumber,
+      postalCode: this.deliveryAddress.postalCode,
+      city: this.deliveryAddress.city,
+      country: this.deliveryAddress.country
 
-          console.error(
-            'Failed to load customer',
-            error
-          );
+    }).subscribe({
 
-          this.checkoutService.setLoading(false);
+      next: customer => {
+        console.log('Customer address saved:', customer);
+        this.checkoutService.setCustomer(customer);
+        this.populateDeliveryAddress(customer);
+        this.submitting.set(false);
+      },
 
-          this.checkoutService.setError(
-            'Unable to load your customer profile.'
-          );
+      error: error => {
 
-          this.hasError.set(true);
-          this.errorMessage.set(
-            'Unable to load your customer profile.'
-          );
-        }
-      });
+        console.error(
+          'Failed to save customer address:',
+          error
+        );
+
+        this.submitting.set(false);
+
+        this.hasError.set(true);
+
+        this.errorMessage.set(
+          error?.error?.message ??
+          'Unable to save your delivery address.'
+        );
+      }
+    });
   }
 
   /**
@@ -135,12 +176,8 @@ export class CheckoutComponent implements OnInit {
   ): void {
 
     this.deliveryAddress = {
-
-      firstName:
-        customer.firstName ?? '',
-
-      lastName:
-        customer.lastName ?? '',
+      firstName: customer.firstName ?? '',
+      lastName: customer.lastName ?? '',
 
       email:
         customer.email ?? '',
@@ -175,7 +212,6 @@ export class CheckoutComponent implements OnInit {
     }
 
     this.showCheckoutForm.set(true);;
-
     window.scrollTo({
       top: 0,
       behavior: 'smooth'
@@ -188,12 +224,9 @@ export class CheckoutComponent implements OnInit {
   updateCustomer(): void {
 
     this.submitting.set(true);
-
     this.hasError.set(false);
-
     this.userService
       .updateCustomer({
-
         firstName:
         this.deliveryAddress.firstName,
 
@@ -219,21 +252,15 @@ export class CheckoutComponent implements OnInit {
         this.deliveryAddress.country
       })
       .subscribe({
-
         next: (customer) => {
-
-          this.checkoutService
-            .setCustomer(customer);
-
+          this.checkoutService.setCustomer(customer);
           this.populateDeliveryAddress(
             customer
           );
-
           this.submitting.set(false);;
         },
 
         error: (error) => {
-
           console.error(
             'Customer update failed',
             error
@@ -282,6 +309,13 @@ export class CheckoutComponent implements OnInit {
     if (this.itemCount() === 0) {
       return;
     }
+    if (this.customerId === null) {
+      this.hasError.set(true);
+      this.errorMessage.set(
+        'Customer information is not available.'
+      );
+      return;
+    }
 
     if (!this.isDeliveryAddressValid()) {
       this.hasError.set(true);
@@ -290,66 +324,46 @@ export class CheckoutComponent implements OnInit {
     }
 
     this.submitting.set(true);
-
     this.hasError.set(false);
+    this.errorMessage.set('');
 
-    this.userService
-      .updateCustomer({
+    // create order through OrderService
+    const request: CheckoutRequest = {
+      customerId: this.customerId,
+      currency: 'EUR',
+      paymentMethod: 'CREDIT_CARD',
+      deliveryAddress: {
+        street: this.deliveryAddress.street,
+        postalCode: this.deliveryAddress.postalCode,
+        city: this.deliveryAddress.city,
+        country: this.deliveryAddress.country
+      },
 
-        firstName:
-        this.deliveryAddress.firstName,
+      items: this.items().map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity
+      }))
+    };
+    console.log('Creating order:', request);
+    this.orderService.checkout(request).subscribe({
+      next: order => {
+        console.log('Order created successfully:', order);
+        this.submitting.set(false);
+        this.cartService.clear();
+        // TODO: navigate to order confirmation
+        alert('Order successfully placed...');
+      },
+      error: error => {
+        console.error('Failed to create order:', error);
+        this.submitting.set(false);
+        this.hasError.set(true);
+        this.errorMessage.set(
+          error?.error?.message ??
+          'Unable to create your order.'
+        );
+      }
+    });
 
-        lastName:
-        this.deliveryAddress.lastName,
-
-        phone:
-        this.deliveryAddress.phone,
-
-        street:
-        this.deliveryAddress.street,
-
-        houseNumber:
-        this.deliveryAddress.houseNumber,
-
-        postalCode:
-        this.deliveryAddress.postalCode,
-
-        city:
-        this.deliveryAddress.city,
-
-        country:
-        this.deliveryAddress.country
-      })
-      .subscribe({
-
-        next: (customer) => {
-
-          this.checkoutService
-            .setCustomer(customer);
-
-          this.submitting.set(false);;
-
-          // Next step:
-          // create order through OrderService
-          console.log(
-            'Customer saved. Ready to create order.',
-            customer
-          );
-        },
-
-        error: (error) => {
-          console.error(
-            'Failed to save customer',
-            error
-          );
-
-          this.submitting.set(false);;
-
-          this.hasError.set(true);;
-
-          this.errorMessage.set( 'Could not save your delivery address.');
-        }
-      });
   }
 
   /**
@@ -358,7 +372,6 @@ export class CheckoutComponent implements OnInit {
   private isDeliveryAddressValid(): boolean {
 
     const address = this.deliveryAddress;
-
     return !!(
       address.firstName &&
       address.lastName &&

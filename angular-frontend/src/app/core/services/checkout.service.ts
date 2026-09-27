@@ -6,17 +6,14 @@ import { Customer } from '../models/customer.model';
 })
 export class CheckoutService {
 
-  private readonly customerState =
-    signal<Customer | null>(null);
+  private readonly customerState = signal<Customer | null>(null);
 
-  private readonly loadingState =
-    signal(false);
+  private readonly loadingState = signal(false);
 
   private readonly errorState =
     signal<string | null>(null);
 
   // Public readonly signals
-
   readonly customer =
     this.customerState.asReadonly();
 
@@ -30,9 +27,7 @@ export class CheckoutService {
    * Customer full name.
    */
   readonly fullName = computed(() => {
-
     const customer = this.customer();
-
     if (!customer) {
       return '';
     }
@@ -46,7 +41,6 @@ export class CheckoutService {
   readonly hasDeliveryAddress = computed(() => {
 
     const customer = this.customer();
-
     if (!customer) {
       return false;
     }
@@ -76,11 +70,8 @@ export class CheckoutService {
   }
 
   clear(): void {
-
     this.customerState.set(null);
-
     this.loadingState.set(false);
-
     this.errorState.set(null);
   }
 }

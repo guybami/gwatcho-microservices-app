@@ -1,35 +1,44 @@
-import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { from, switchMap } from 'rxjs';
+import {
+  HttpInterceptorFn
+} from '@angular/common/http';
+import { from } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 
 import { AuthService } from '../auth/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
-    const authService = inject(AuthService);
+  const authService = inject(AuthService);
 
-    console.log('AuthInterceptor:', req.url);
+  // Public request
+  if (!authService.isAuthenticated()) {
+    return next(req);
+  }
 
-    if (!authService.isAuthenticated()) {
-        console.log('Not authenticated');
+  return from(authService.updateToken(30)).pipe(
+
+    switchMap((refreshed) => {
+
+      if (!refreshed && !authService.isAuthenticated()) {
         return next(req);
-    }
+      }
 
-    const token = authService.getToken();
+      const token = authService.getToken();
 
-    if (!token) {
-        console.warn('Authenticated but no access token');
+      if (!token) {
         return next(req);
-    }
+      }
 
-    console.log('Adding Authorization header');
-
-    const authenticatedRequest = req.clone({
+      const authenticatedRequest = req.clone({
         setHeaders: {
-            Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`
         }
-    });
+      });
 
-    return next(authenticatedRequest);
+      console.log('AuthInterceptor: Authorization header added');
 
+      return next(authenticatedRequest);
+    })
+  );
 };

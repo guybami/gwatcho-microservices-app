@@ -395,6 +395,20 @@
 
         </div>
 
+        <div class="address-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="saveCustomerAddress()"
+            [disabled]="submitting()">
+            @if (submitting()) {
+              Saving...
+            } @else {
+              Save Address
+            }
+          </button>
+        </div>
+
 
         <!-- ========================= -->
         <!-- ORDER SUMMARY              -->
@@ -438,7 +452,6 @@
         <!-- ========================= -->
 
         <div class="checkout-actions">
-
           <button
             type="button"
             class="back-button"
@@ -458,11 +471,9 @@
           >
 
             @if (submitting()) {
-
               <span>
                 Processing...
               </span>
-
             } @else {
 
               <span>
