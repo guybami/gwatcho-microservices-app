@@ -4,6 +4,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.context.annotation.Bean;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtValidators;
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 @Configuration
 public class SecurityConfig {
@@ -25,5 +31,24 @@ public class SecurityConfig {
                 );
 
         return http.build();
+    }
+
+    @Bean
+    JwtDecoder jwtDecoder() {
+
+        NimbusJwtDecoder decoder = NimbusJwtDecoder
+                .withJwkSetUri(
+                        "http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs"
+                )
+                .build();
+
+        OAuth2TokenValidator<Jwt> issuerValidator =
+                JwtValidators.createDefaultWithIssuer(
+                        "http://localhost:8080/realms/gwatcho-shop"
+                );
+
+        decoder.setJwtValidator(issuerValidator);
+
+        return decoder;
     }
 }

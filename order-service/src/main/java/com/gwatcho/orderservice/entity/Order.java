@@ -60,7 +60,6 @@ public class Order {
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
 
-
     @PrePersist
     protected void onCreate() {
 
@@ -75,13 +74,11 @@ public class Order {
         }
     }
 
-
     @PreUpdate
     protected void onUpdate() {
 
         updatedAt = LocalDateTime.now();
     }
-
 
     public void addItem(OrderItem item) {
 
@@ -89,7 +86,6 @@ public class Order {
 
         item.setOrder(this);
     }
-
 
     public void calculateTotal() {
 

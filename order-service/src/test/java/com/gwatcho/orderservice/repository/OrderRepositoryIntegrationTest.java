@@ -20,7 +20,6 @@ class OrderRepositoryIntegrationTest {
     @Autowired
     private OrderRepository orderRepository;
 
-
     @Test
     void shouldSaveOrderWithItems() {
 
@@ -43,7 +42,6 @@ class OrderRepositoryIntegrationTest {
                         )
                         .build();
 
-
         OrderItem item =
                 OrderItem.builder()
                         .productId(1L)
@@ -58,13 +56,10 @@ class OrderRepositoryIntegrationTest {
                         )
                         .build();
 
-
         order.addItem(item);
-
 
         Order saved =
                 orderRepository.saveAndFlush(order);
-
 
         assertThat(saved.getId())
                 .isNotNull();
@@ -78,7 +73,6 @@ class OrderRepositoryIntegrationTest {
         assertThat(saved.getItems().get(0).getUnitPrice())
                 .isEqualByComparingTo("125.00");
     }
-
 
     @Test
     void shouldFindOrdersByCustomerId() {
@@ -102,13 +96,10 @@ class OrderRepositoryIntegrationTest {
                         )
                         .build();
 
-
         orderRepository.saveAndFlush(order);
-
 
         var orders =
                 orderRepository.findByCustomerId(200L);
-
 
         assertThat(orders)
                 .hasSize(1);

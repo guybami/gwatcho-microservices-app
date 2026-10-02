@@ -14,8 +14,7 @@ export class OrderService {
 
   private readonly http = inject(HttpClient);
 
-  private readonly apiUrl =
-    'http://localhost:8082/order-service/orders';
+  private readonly apiUrl = 'api/order-service/orders';
 
   checkout(request: CheckoutRequest): Observable<unknown> {
     return this.http.post(

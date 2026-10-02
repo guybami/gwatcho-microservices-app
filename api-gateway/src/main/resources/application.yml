@@ -1,0 +1,55 @@
+
+server:
+  port: 8085
+  reactive:
+    context-path: /api-gateway
+
+spring:
+  application:
+    name: api-gateway
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8080/realms/gwatcho-shop
+
+  cloud:
+    gateway:
+      routes:
+
+        # USER SERVICE
+        - id: user-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/user-service/**
+
+        # PRODUCT SERVICE
+        - id: product-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/product-service/**
+
+        # ORDER SERVICE
+        - id: order-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/order-service/**
+
+        # DELIVERY SERVICE
+        - id: delivery-service
+          uri: http://localhost:8084
+          predicates:
+            - Path=/delivery-service/**
+
+        # PAYMENT SERVICE
+        - id: payment-service
+          uri: http://localhost:8086
+          predicates:
+            - Path=/payment-service/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

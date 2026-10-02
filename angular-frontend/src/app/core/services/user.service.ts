@@ -11,7 +11,7 @@ export class UserService {
 
   private readonly http = inject(HttpClient);
 
-  private readonly apiUrl = 'http://localhost:8081/user-service/api/users';
+  private readonly apiUrl = '/api/users'; // 'http://localhost:8081/user-service/api/users';
 
   private customer$?: Observable<Customer>;
 

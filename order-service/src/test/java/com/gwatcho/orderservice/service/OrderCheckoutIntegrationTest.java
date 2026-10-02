@@ -31,7 +31,6 @@ class OrderCheckoutIntegrationTest {
     @Autowired
     private OrderRepository orderRepository;
 
-
     private List<ProductSnapshot> createProducts() {
 
         return List.of(
@@ -101,7 +100,6 @@ class OrderCheckoutIntegrationTest {
                         20
                 );
 
-
         ProductSnapshot mouse =
                 new ProductSnapshot(
                         2L,
@@ -112,13 +110,11 @@ class OrderCheckoutIntegrationTest {
                         50
                 );
 
-
         List<ProductSnapshot> products =
                 List.of(
                         laptop,
                         mouse
                 );
-
 
         // -----------------------------------------------------
         // Execute checkout
@@ -129,7 +125,6 @@ class OrderCheckoutIntegrationTest {
                         request,
                         products
                 );
-
 
         // -----------------------------------------------------
         // Verify response
@@ -159,7 +154,6 @@ class OrderCheckoutIntegrationTest {
         assertThat(response.totalAmount())
                 .isEqualByComparingTo("2425.00");
 
-
         // -----------------------------------------------------
         // Verify delivery address
         // -----------------------------------------------------
@@ -176,14 +170,12 @@ class OrderCheckoutIntegrationTest {
         assertThat(response.country())
                 .isEqualTo("DE");
 
-
         // -----------------------------------------------------
         // Verify order items
         // -----------------------------------------------------
 
         assertThat(response.items())
                 .hasSize(2);
-
 
         // Laptop
 
@@ -208,7 +200,6 @@ class OrderCheckoutIntegrationTest {
         assertThat(laptopItem.lineTotal())
                 .isEqualByComparingTo("2400.00");
 
-
         // Mouse
 
         var mouseItem =
@@ -232,7 +223,6 @@ class OrderCheckoutIntegrationTest {
         assertThat(mouseItem.lineTotal())
                 .isEqualByComparingTo("25.00");
 
-
         // -----------------------------------------------------
         // Verify persistence
         // -----------------------------------------------------
@@ -241,7 +231,6 @@ class OrderCheckoutIntegrationTest {
                 orderRepository
                         .findById(response.id())
                         .orElseThrow();
-
 
         assertThat(persisted.getId())
                 .isEqualTo(response.id());
@@ -258,17 +247,14 @@ class OrderCheckoutIntegrationTest {
         assertThat(persisted.getTotalAmount())
                 .isEqualByComparingTo("2425.00");
 
-
         // -----------------------------------------------------
         // Verify persisted items
         // -----------------------------------------------------
 
         assertThat(persisted.getItems()).hasSize(2);
 
-
         Order persistedOrder =
                 persisted;
-
 
         var persistedLaptop =
                 persistedOrder.getItems()
@@ -279,7 +265,6 @@ class OrderCheckoutIntegrationTest {
                         )
                         .findFirst()
                         .orElseThrow();
-
 
         assertThat(persistedLaptop.getSku())
                 .isEqualTo("LAPTOP-001");
@@ -296,7 +281,6 @@ class OrderCheckoutIntegrationTest {
         assertThat(persistedLaptop.getLineTotal())
                 .isEqualByComparingTo("2400.00");
 
-
         var persistedMouse =
                 persistedOrder.getItems()
                         .stream()
@@ -306,7 +290,6 @@ class OrderCheckoutIntegrationTest {
                         )
                         .findFirst()
                         .orElseThrow();
-
 
         assertThat(persistedMouse.getSku())
                 .isEqualTo("MOUSE-001");
@@ -323,7 +306,6 @@ class OrderCheckoutIntegrationTest {
         assertThat(persistedMouse.getLineTotal())
                 .isEqualByComparingTo("25.00");
     }
-
 
     // =========================================================
     // PRODUCT CURRENCY VALIDATION
@@ -355,7 +337,6 @@ class OrderCheckoutIntegrationTest {
                         )
                 );
 
-
         ProductSnapshot eurProduct =
                 new ProductSnapshot(
                         1L,
@@ -366,7 +347,6 @@ class OrderCheckoutIntegrationTest {
                         10
                 );
 
-
         ProductSnapshot chfProduct =
                 new ProductSnapshot(
                         2L,
@@ -376,7 +356,6 @@ class OrderCheckoutIntegrationTest {
                         "CHF",
                         10
                 );
-
 
         assertThat(
                 org.assertj.core.api.Assertions
@@ -398,7 +377,6 @@ class OrderCheckoutIntegrationTest {
                 );
     }
 
-
     // =========================================================
     // MISSING CURRENCY
     // =========================================================
@@ -409,7 +387,7 @@ class OrderCheckoutIntegrationTest {
         CheckoutRequest request =
                 new CheckoutRequest(
                         100L,
-                            "EUR",
+                        "EUR",
                         "CARD",
                         new DeliveryAddressRequest(
                                 "Main Street 10",
@@ -424,9 +402,7 @@ class OrderCheckoutIntegrationTest {
                                 )
                         )
 
-
                 );
-
 
         ProductSnapshot product =
                 new ProductSnapshot(
@@ -437,7 +413,6 @@ class OrderCheckoutIntegrationTest {
                         null,
                         10
                 );
-
 
         assertThat(
                 org.assertj.core.api.Assertions
@@ -456,7 +431,6 @@ class OrderCheckoutIntegrationTest {
                 );
     }
 
-
     // =========================================================
     // PRODUCT MISMATCH
     // =========================================================
@@ -467,7 +441,7 @@ class OrderCheckoutIntegrationTest {
         CheckoutRequest request =
                 new CheckoutRequest(
                         100L,
-                         "EUR",
+                        "EUR",
                         "CARD",
                         new DeliveryAddressRequest(
                                 "Main Street 10",
@@ -483,7 +457,6 @@ class OrderCheckoutIntegrationTest {
                         )
                 );
 
-
         ProductSnapshot wrongProduct =
                 new ProductSnapshot(
                         999L,
@@ -493,7 +466,6 @@ class OrderCheckoutIntegrationTest {
                         "EUR",
                         10
                 );
-
 
         assertThat(
                 org.assertj.core.api.Assertions
@@ -512,7 +484,6 @@ class OrderCheckoutIntegrationTest {
                 );
     }
 
-
     // =========================================================
     // INSUFFICIENT STOCK
     // =========================================================
@@ -523,7 +494,7 @@ class OrderCheckoutIntegrationTest {
         CheckoutRequest request =
                 new CheckoutRequest(
                         100L,
-                                "EUR",
+                        "EUR",
                         "CARD",
                         new DeliveryAddressRequest(
                                 "Main Street 10",
@@ -538,9 +509,7 @@ class OrderCheckoutIntegrationTest {
                                 )
                         )
 
-
                 );
-
 
         ProductSnapshot product =
                 new ProductSnapshot(
@@ -551,7 +520,6 @@ class OrderCheckoutIntegrationTest {
                         "EUR",
                         5
                 );
-
 
         assertThat(
                 org.assertj.core.api.Assertions

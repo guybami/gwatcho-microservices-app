@@ -16,10 +16,9 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class ProductCheckoutClientImpl     implements ProductCheckoutClient {
+public class ProductCheckoutClientImpl implements ProductCheckoutClient {
 
     private final RestClient productServiceRestClient;
-
 
     @Override
     public List<ProductSnapshot> getProductsForCheckout(
@@ -29,7 +28,6 @@ public class ProductCheckoutClientImpl     implements ProductCheckoutClient {
                 .map(this::getProduct)
                 .toList();
     }
-
 
     private ProductSnapshot getProduct(
             CheckoutItemRequest item) {
@@ -119,7 +117,6 @@ public class ProductCheckoutClientImpl     implements ProductCheckoutClient {
                     productResponse.currency(),
                     productResponse.stockQuantity()
             );
-
 
             return new ProductSnapshot(
                     productResponse.id(),

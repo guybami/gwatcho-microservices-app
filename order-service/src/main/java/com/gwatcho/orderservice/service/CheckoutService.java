@@ -21,7 +21,6 @@ public class CheckoutService {
     // Later this will be the ProductService client.
     private final ProductCheckoutClient productCheckoutClient;
 
-
     @Transactional
     public OrderResponse checkout(
             CheckoutRequest request) {

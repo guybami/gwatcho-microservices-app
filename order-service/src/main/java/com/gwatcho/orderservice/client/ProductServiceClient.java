@@ -11,7 +11,6 @@ public class ProductServiceClient {
 
     private final RestClient productRestClient;
 
-
     public ProductResponse getProduct(Long productId) {
 
         return productRestClient

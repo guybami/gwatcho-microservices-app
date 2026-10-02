@@ -45,7 +45,6 @@ class OrderServiceTest {
 
     private OrderService orderService;
 
-
     // =========================================================
     // SETUP
     // =========================================================
@@ -68,7 +67,6 @@ class OrderServiceTest {
                 );
     }
 
-
     // =========================================================
     // CREATE ORDER
     // =========================================================
@@ -82,7 +80,6 @@ class OrderServiceTest {
         List<ProductSnapshot> products =
                 createProducts();
 
-
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> {
 
@@ -94,19 +91,16 @@ class OrderServiceTest {
                     return order;
                 });
 
-
         when(outboxEventRepository.save(
                 any(OrderOutboxEvent.class)))
                 .thenAnswer(invocation ->
                         invocation.getArgument(0));
-
 
         OrderResponse response =
                 orderService.createOrder(
                         request,
                         products
                 );
-
 
         // =====================================================
         // ORDER
@@ -134,7 +128,6 @@ class OrderServiceTest {
         assertThat(response.items())
                 .hasSize(2);
 
-
         // =====================================================
         // ORDER ITEM 1
         // =====================================================
@@ -160,7 +153,6 @@ class OrderServiceTest {
                 .isEqualByComparingTo(
                         new BigDecimal("199.98")
                 );
-
 
         // =====================================================
         // ORDER ITEM 2
@@ -190,7 +182,6 @@ class OrderServiceTest {
                         new BigDecimal("2493.30")
                 );
 
-
         // =====================================================
         // OUTBOX
         // =====================================================
@@ -201,7 +192,6 @@ class OrderServiceTest {
         verify(outboxEventRepository)
                 .save(any(OrderOutboxEvent.class));
     }
-
 
     // =========================================================
     // PRODUCT SNAPSHOT
@@ -216,7 +206,6 @@ class OrderServiceTest {
         List<ProductSnapshot> products =
                 createProducts();
 
-
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> {
 
@@ -228,12 +217,10 @@ class OrderServiceTest {
                     return order;
                 });
 
-
         when(outboxEventRepository.save(
                 any(OrderOutboxEvent.class)))
                 .thenAnswer(invocation ->
                         invocation.getArgument(0));
-
 
         OrderResponse response =
                 orderService.createOrder(
@@ -241,10 +228,8 @@ class OrderServiceTest {
                         products
                 );
 
-
         assertThat(response.items())
                 .hasSize(2);
-
 
         assertThat(response.items().get(0).productId())
                 .isEqualTo(1L);
@@ -259,7 +244,6 @@ class OrderServiceTest {
                 .isEqualByComparingTo(
                         new BigDecimal("99.99")
                 );
-
 
         assertThat(response.items().get(1).productId())
                 .isEqualTo(25L);
@@ -278,7 +262,6 @@ class OrderServiceTest {
                 );
     }
 
-
     // =========================================================
     // OUTBOX EVENT
     // =========================================================
@@ -292,7 +275,6 @@ class OrderServiceTest {
         List<ProductSnapshot> products =
                 createProducts();
 
-
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> {
 
@@ -304,32 +286,26 @@ class OrderServiceTest {
                     return order;
                 });
 
-
         ArgumentCaptor<OrderOutboxEvent> captor =
                 ArgumentCaptor.forClass(
                         OrderOutboxEvent.class
                 );
-
 
         when(outboxEventRepository.save(
                 any(OrderOutboxEvent.class)))
                 .thenAnswer(invocation ->
                         invocation.getArgument(0));
 
-
         orderService.createOrder(
                 request,
                 products
         );
 
-
         verify(outboxEventRepository)
                 .save(captor.capture());
 
-
         OrderOutboxEvent event =
                 captor.getValue();
-
 
         assertThat(event.getEventId())
                 .isNotNull();
@@ -359,7 +335,6 @@ class OrderServiceTest {
                 .isNotBlank();
     }
 
-
     // =========================================================
     // OUTBOX PAYLOAD
     // =========================================================
@@ -373,7 +348,6 @@ class OrderServiceTest {
         List<ProductSnapshot> products =
                 createProducts();
 
-
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation -> {
 
@@ -385,38 +359,31 @@ class OrderServiceTest {
                     return order;
                 });
 
-
         ArgumentCaptor<OrderOutboxEvent> captor =
                 ArgumentCaptor.forClass(
                         OrderOutboxEvent.class
                 );
-
 
         when(outboxEventRepository.save(
                 any(OrderOutboxEvent.class)))
                 .thenAnswer(invocation ->
                         invocation.getArgument(0));
 
-
         orderService.createOrder(
                 request,
                 products
         );
 
-
         verify(outboxEventRepository)
                 .save(captor.capture());
 
-
         OrderOutboxEvent event =
                 captor.getValue();
-
 
         var json =
                 objectMapper.readTree(
                         event.getPayload()
                 );
-
 
         assertThat(
                 json.get("eventId").asText()
@@ -425,24 +392,20 @@ class OrderServiceTest {
                         event.getEventId()
                 );
 
-
         assertThat(
                 json.get("eventType").asText()
         )
                 .isEqualTo("OrderCreated");
-
 
         assertThat(
                 json.get("orderId").asLong()
         )
                 .isEqualTo(1L);
 
-
         assertThat(
                 json.get("customerId").asLong()
         )
                 .isEqualTo(100L);
-
 
         assertThat(
                 json.get("totalAmount").decimalValue()
@@ -451,19 +414,16 @@ class OrderServiceTest {
                         new BigDecimal("2693.28")
                 );
 
-
         assertThat(
                 json.get("currency").asText()
         )
                 .isEqualTo("EUR");
-
 
         assertThat(
                 json.get("items").size()
         )
                 .isEqualTo(2);
     }
-
 
     // =========================================================
     // VALIDATION
@@ -486,13 +446,11 @@ class OrderServiceTest {
                 );
     }
 
-
     @Test
     void shouldRejectEmptyProducts() {
 
         CheckoutRequest request =
                 createCheckoutRequest();
-
 
         assertThatThrownBy(() ->
                 orderService.createOrder(
@@ -508,13 +466,11 @@ class OrderServiceTest {
                 );
     }
 
-
     @Test
     void shouldRejectNullProducts() {
 
         CheckoutRequest request =
                 createCheckoutRequest();
-
 
         assertThatThrownBy(() ->
                 orderService.createOrder(
@@ -530,7 +486,6 @@ class OrderServiceTest {
                 );
     }
 
-
     @Test
     void shouldRejectEmptyCheckoutItems() {
 
@@ -542,7 +497,6 @@ class OrderServiceTest {
                         createDeliveryAddressRequest(),
                         List.of()
                 );
-
 
         assertThatThrownBy(() ->
                 orderService.createOrder(
@@ -558,19 +512,16 @@ class OrderServiceTest {
                 );
     }
 
-
     @Test
     void shouldRejectProductCountMismatch() {
 
         CheckoutRequest request =
                 createCheckoutRequest();
 
-
         List<ProductSnapshot> products =
                 List.of(
                         createProducts().get(0)
                 );
-
 
         assertThatThrownBy(() ->
                 orderService.createOrder(
@@ -586,13 +537,11 @@ class OrderServiceTest {
                 );
     }
 
-
     @Test
     void shouldRejectProductMismatch() {
 
         CheckoutRequest request =
                 createCheckoutRequest();
-
 
         ProductSnapshot wrongProduct =
                 new ProductSnapshot(
@@ -603,7 +552,6 @@ class OrderServiceTest {
                         "EUR",
                         10
                 );
-
 
         assertThatThrownBy(() ->
                 orderService.createOrder(
@@ -622,13 +570,11 @@ class OrderServiceTest {
                 );
     }
 
-
     @Test
     void shouldRejectNullProductSnapshot() {
 
         CheckoutRequest request =
                 createCheckoutRequest();
-
 
         List<ProductSnapshot> products =
                 Arrays.asList(
@@ -650,13 +596,11 @@ class OrderServiceTest {
                 );
     }
 
-
     @Test
     void shouldRejectMissingProductCurrency() {
 
         CheckoutRequest request =
                 createCheckoutRequest();
-
 
         ProductSnapshot product =
                 new ProductSnapshot(
@@ -667,7 +611,6 @@ class OrderServiceTest {
                         null,
                         10
                 );
-
 
         assertThatThrownBy(() ->
                 orderService.createOrder(
@@ -686,13 +629,11 @@ class OrderServiceTest {
                 );
     }
 
-
     @Test
     void shouldRejectMissingProductPrice() {
 
         CheckoutRequest request =
                 createCheckoutRequest();
-
 
         ProductSnapshot product =
                 new ProductSnapshot(
@@ -703,7 +644,6 @@ class OrderServiceTest {
                         "EUR",
                         10
                 );
-
 
         assertThatThrownBy(() ->
                 orderService.createOrder(
@@ -721,7 +661,6 @@ class OrderServiceTest {
                         "Product price is missing"
                 );
     }
-
 
     @Test
     void shouldRejectInvalidQuantity() {
@@ -744,7 +683,6 @@ class OrderServiceTest {
                         )
                 );
 
-
         assertThatThrownBy(() ->
                 orderService.createOrder(
                         request,
@@ -758,7 +696,6 @@ class OrderServiceTest {
                         "Quantity must be greater than zero"
                 );
     }
-
 
     @Test
     void shouldRejectInsufficientStock() {
@@ -781,7 +718,6 @@ class OrderServiceTest {
                         )
                 );
 
-
         assertThatThrownBy(() ->
                 orderService.createOrder(
                         request,
@@ -796,16 +732,13 @@ class OrderServiceTest {
                 );
     }
 
-
     @Test
     void shouldRejectDifferentCurrencies() {
 
         CheckoutRequest request =
                 createCheckoutRequest();
 
-
         ProductSnapshot euroProduct = createProducts().get(0);
-
 
         ProductSnapshot usdProduct =
                 new ProductSnapshot(
@@ -816,7 +749,6 @@ class OrderServiceTest {
                         "USD",
                         10
                 );
-
 
         assertThatThrownBy(() ->
                 orderService.createOrder(
@@ -835,7 +767,6 @@ class OrderServiceTest {
                 );
     }
 
-
     // =========================================================
     // GET ORDER
     // =========================================================
@@ -846,16 +777,13 @@ class OrderServiceTest {
         Order order =
                 createOrderEntity();
 
-
         when(orderRepository.findById(1L))
                 .thenReturn(
                         java.util.Optional.of(order)
                 );
 
-
         OrderResponse response =
                 orderService.getOrder(1L);
-
 
         assertThat(response).isNotNull();
 
@@ -869,7 +797,6 @@ class OrderServiceTest {
                 .hasSize(2);
     }
 
-
     @Test
     void shouldRejectGetOrderWhenNotFound() {
 
@@ -877,7 +804,6 @@ class OrderServiceTest {
                 .thenReturn(
                         java.util.Optional.empty()
                 );
-
 
         assertThatThrownBy(() ->
                 orderService.getOrder(999L)
@@ -889,7 +815,6 @@ class OrderServiceTest {
                         "Order not found: 999"
                 );
     }
-
 
     // =========================================================
     // GET ALL ORDERS
@@ -906,7 +831,6 @@ class OrderServiceTest {
 
         order2.setId(2L);
 
-
         when(orderRepository.findAll())
                 .thenReturn(
                         List.of(
@@ -915,10 +839,8 @@ class OrderServiceTest {
                         )
                 );
 
-
         List<OrderResponse> responses =
                 orderService.getOrders();
-
 
         assertThat(responses)
                 .hasSize(2);
@@ -930,7 +852,6 @@ class OrderServiceTest {
                 .isEqualTo(2L);
     }
 
-
     // =========================================================
     // CUSTOMER ORDERS
     // =========================================================
@@ -941,16 +862,13 @@ class OrderServiceTest {
         Order order =
                 createOrderEntity();
 
-
         when(orderRepository.findByCustomerId(100L))
                 .thenReturn(
                         List.of(order)
                 );
 
-
         List<OrderResponse> responses =
                 orderService.getCustomerOrders(100L);
-
 
         assertThat(responses)
                 .hasSize(1);
@@ -958,7 +876,6 @@ class OrderServiceTest {
         assertThat(responses.get(0).customerId())
                 .isEqualTo(100L);
     }
-
 
     // =========================================================
     // CANCEL ORDER
@@ -974,33 +891,27 @@ class OrderServiceTest {
                 OrderStatus.CREATED
         );
 
-
         when(orderRepository.findById(1L))
                 .thenReturn(
                         java.util.Optional.of(order)
                 );
-
 
         when(orderRepository.save(any(Order.class)))
                 .thenAnswer(invocation ->
                         invocation.getArgument(0)
                 );
 
-
         OrderResponse response =
                 orderService.cancelOrder(1L);
-
 
         assertThat(response.status())
                 .isEqualTo(
                         OrderStatus.CANCELLED
                 );
 
-
         verify(orderRepository)
                 .save(any(Order.class));
     }
-
 
     @Test
     void shouldNotCancelPaidOrder() {
@@ -1012,12 +923,10 @@ class OrderServiceTest {
                 OrderStatus.PAID
         );
 
-
         when(orderRepository.findById(1L))
                 .thenReturn(
                         java.util.Optional.of(order)
                 );
-
 
         assertThatThrownBy(() ->
                 orderService.cancelOrder(1L)
@@ -1029,7 +938,6 @@ class OrderServiceTest {
                         "Order cannot be cancelled"
                 );
     }
-
 
     @Test
     void shouldNotCancelCompletedOrder() {
@@ -1041,12 +949,10 @@ class OrderServiceTest {
                 OrderStatus.COMPLETED
         );
 
-
         when(orderRepository.findById(1L))
                 .thenReturn(
                         java.util.Optional.of(order)
                 );
-
 
         assertThatThrownBy(() ->
                 orderService.cancelOrder(1L)
@@ -1058,7 +964,6 @@ class OrderServiceTest {
                         "Order cannot be cancelled"
                 );
     }
-
 
     // =========================================================
     // TEST DATA
@@ -1084,7 +989,6 @@ class OrderServiceTest {
         );
     }
 
-
     private DeliveryAddressRequest createDeliveryAddressRequest() {
 
         return new DeliveryAddressRequest(
@@ -1104,7 +1008,6 @@ class OrderServiceTest {
                 .country("DE")
                 .build();
     }
-
 
     private List<ProductSnapshot> createProducts() {
 
@@ -1130,7 +1033,6 @@ class OrderServiceTest {
         );
     }
 
-
     private Order createOrderEntity() {
 
         Order order =
@@ -1144,7 +1046,6 @@ class OrderServiceTest {
                                 createAddress()
                         )
                         .build();
-
 
         OrderItem item1 =
                 OrderItem.builder()
@@ -1162,7 +1063,6 @@ class OrderServiceTest {
                         )
                         .build();
 
-
         OrderItem item2 =
                 OrderItem.builder()
                         .productId(25L)
@@ -1178,7 +1078,6 @@ class OrderServiceTest {
                                 new BigDecimal("2493.30")
                         )
                         .build();
-
 
         order.addItem(item1);
         order.addItem(item2);

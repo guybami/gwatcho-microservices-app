@@ -26,7 +26,6 @@ public class OrderOutboxPublisher {
 
     private final KafkaProducer<String, String> kafkaProducer;
 
-
     @Scheduled(fixedDelay = 1000)
     public void publishPendingEvents() {
 
@@ -36,12 +35,10 @@ public class OrderOutboxPublisher {
                                 OutboxStatus.PENDING
                         );
 
-
         for (OrderOutboxEvent event : events) {
             publish(event);
         }
     }
-
 
     private void publish(OrderOutboxEvent event) {
 
@@ -95,7 +92,6 @@ public class OrderOutboxPublisher {
             outboxRepository.save(event);
         }
     }
-
 
     @Transactional
     protected void markAsPublished(

@@ -25,7 +25,6 @@ public class OrderController {
 
     private final CheckoutService checkoutService;
 
-
     // =========================================================
     // CHECKOUT
     // =========================================================
@@ -40,7 +39,6 @@ public class OrderController {
                 .body(response);
     }
 
-
     // =========================================================
     // GET ORDER
     // =========================================================
@@ -53,7 +51,6 @@ public class OrderController {
                 orderService.getOrder(id)
         );
     }
-
 
     // =========================================================
     // GET CUSTOMER ORDERS
@@ -70,7 +67,6 @@ public class OrderController {
         );
     }
 
-
     // =========================================================
     // GET ALL ORDERS
     // =========================================================
@@ -82,7 +78,6 @@ public class OrderController {
                 orderService.getOrders()
         );
     }
-
 
     // =========================================================
     // CANCEL ORDER

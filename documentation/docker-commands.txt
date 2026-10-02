@@ -1,0 +1,46 @@
+
+
+.\bin\windows\kafka-storage.bat format --standalone -t cXSMH3t3RgqIB7nQa7PMxQ -c .\config\server.properties
+
+
+  
+  Get-Content .\docker\mysql\product\products.sql | docker compose exec -T mysql-product mysql -u product_user -p product_db
+  
+
+keycloak -> 8080
+user-service -> 8081, order-service -> 8082, payment-service -> 8086, delivery-service -> 8084, product-service -> 8083 and api-gateway -> 8085
+  
+  
+  C:\Users\guyba\AppData\Local\Docker\wsl
+   
+   
+   Get-ChildItem -Path D:\ToolsForDev\Keycloak -Filter kc.bat -Recurse -ErrorAction SilentlyContinue |  Select-Object FullName
+   
+   .\bin\kc.bat export  --dir D:\ToolsForDev\Keycloak\exports --realm gwatcho-shop
+   
+   Copy-Item D:\ToolsForDev\Keycloak\exports\gwatcho-shop-realm.json   .\docker\keycloak\import\
+   
+   Copy-Item D:\ToolsForDev\Keycloak\exports\gwatcho-shop-users-0.json  .\docker\keycloak\import\
+   
+   
+   Copy-Item   D:\ToolsForDev\Keycloak\exports\gwatcho-shop-realm.json   D:\ToolsForDev\Keycloak\exports\gwatcho-shop-realm-docker.json
+   
+   
+   # rebuild angluar
+   
+   docker build --no-cache -t gwatcho/angular-frontend .
+   
+   # delete image 
+    docker rm -f angular-frontend
+
+   #run docker
+   docker run -d --name angular-frontend -p 4200:80 --network gwatcho-microservices-app_gwatcho-network gwatcho/angular-frontend
+   
+   
+   
+   
+   
+   
+   
+   
+   

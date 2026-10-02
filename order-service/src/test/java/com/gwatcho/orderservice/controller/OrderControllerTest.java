@@ -30,7 +30,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-
 @WebMvcTest(OrderController.class)
 class OrderControllerTest {
 
@@ -40,14 +39,11 @@ class OrderControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-
     @MockBean
     private OrderService orderService;
 
-
     @MockBean
     private CheckoutService checkoutService;
-
 
     // =========================================================
     // CHECKOUT
@@ -72,15 +68,12 @@ class OrderControllerTest {
                         )
                 );
 
-
-        OrderResponse response =    createOrderResponse();
-
+        OrderResponse response = createOrderResponse();
 
         when(checkoutService.checkout(
                 any(CheckoutRequest.class)
         ))
                 .thenReturn(response);
-
 
         mockMvc.perform(
                         post("/orders/checkout")
@@ -170,13 +163,11 @@ class OrderControllerTest {
                                 .value(25.00)
                 );
 
-
         verify(checkoutService)
                 .checkout(
                         any(CheckoutRequest.class)
                 );
     }
-
 
     // =========================================================
     // GET ORDER
@@ -190,7 +181,6 @@ class OrderControllerTest {
                 .thenReturn(
                         createOrderResponse()
                 );
-
 
         mockMvc.perform(
                         get("/orders/1")
@@ -225,11 +215,9 @@ class OrderControllerTest {
                                 .value(2)
                 );
 
-
         verify(orderService)
                 .getOrder(1L);
     }
-
 
     // =========================================================
     // GET CUSTOMER ORDERS
@@ -245,7 +233,6 @@ class OrderControllerTest {
                                 createOrderResponse()
                         )
                 );
-
 
         mockMvc.perform(
                         get("/orders/customer/100")
@@ -272,11 +259,9 @@ class OrderControllerTest {
                                 .value("CREATED")
                 );
 
-
         verify(orderService)
                 .getCustomerOrders(100L);
     }
-
 
     // =========================================================
     // GET ALL ORDERS
@@ -288,7 +273,6 @@ class OrderControllerTest {
 
         OrderResponse order1 =
                 createOrderResponse();
-
 
         OrderResponse order2 =
                 new OrderResponse(
@@ -311,7 +295,6 @@ class OrderControllerTest {
                         null
                 );
 
-
         when(orderService.getOrders())
                 .thenReturn(
                         List.of(
@@ -319,7 +302,6 @@ class OrderControllerTest {
                                 order2
                         )
                 );
-
 
         mockMvc.perform(
                         get("/orders")
@@ -350,11 +332,9 @@ class OrderControllerTest {
                                 .value(200)
                 );
 
-
         verify(orderService)
                 .getOrders();
     }
-
 
     // =========================================================
     // CANCEL ORDER
@@ -371,7 +351,7 @@ class OrderControllerTest {
                         OrderStatus.CANCELLED,
                         new BigDecimal("2425.00"),
                         "EUR",
-                         "CARD",
+                        "CARD",
                         "Main Street 10",
                         "74172",
                         "Neckarsulm",
@@ -384,10 +364,8 @@ class OrderControllerTest {
                         null
                 );
 
-
         when(orderService.cancelOrder(1L))
                 .thenReturn(response);
-
 
         mockMvc.perform(
                         delete("/orders/1")
@@ -406,11 +384,9 @@ class OrderControllerTest {
                                 .value("CANCELLED")
                 );
 
-
         verify(orderService)
                 .cancelOrder(1L);
     }
-
 
     // =========================================================
     // VALIDATION - CUSTOMER ID
@@ -449,7 +425,6 @@ class OrderControllerTest {
                 );
     }
 
-
     // =========================================================
     // VALIDATION - EMPTY ITEMS
     // =========================================================
@@ -471,7 +446,6 @@ class OrderControllerTest {
                 }
                 """;
 
-
         mockMvc.perform(
                         post("/orders/checkout")
                                 .contentType(
@@ -483,7 +457,6 @@ class OrderControllerTest {
                         status().isBadRequest()
                 );
     }
-
 
     // =========================================================
     // VALIDATION - QUANTITY
@@ -511,7 +484,6 @@ class OrderControllerTest {
                 }
                 """;
 
-
         mockMvc.perform(
                         post("/orders/checkout")
                                 .contentType(
@@ -523,7 +495,6 @@ class OrderControllerTest {
                         status().isBadRequest()
                 );
     }
-
 
     // =========================================================
     // VALIDATION - DELIVERY ADDRESS
@@ -545,7 +516,6 @@ class OrderControllerTest {
                 }
                 """;
 
-
         mockMvc.perform(
                         post("/orders/checkout")
                                 .contentType(
@@ -557,7 +527,6 @@ class OrderControllerTest {
                         status().isBadRequest()
                 );
     }
-
 
     // =========================================================
     // TEST DATA

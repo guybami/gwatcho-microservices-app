@@ -44,7 +44,6 @@ public class OrderItem {
     @Column(nullable = false, precision = 19, scale = 2)
     private BigDecimal lineTotal;
 
-
     public void calculateLineTotal() {
 
         lineTotal =

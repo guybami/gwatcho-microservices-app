@@ -5,9 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestClient;
 
-
 public class ProductServiceClientConfig {
-
 
     public RestClient productRestClient(
             @Value("${services.product-service.url}")

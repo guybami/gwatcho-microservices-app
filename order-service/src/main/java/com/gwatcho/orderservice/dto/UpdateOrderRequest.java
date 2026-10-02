@@ -5,14 +5,11 @@ import jakarta.validation.constraints.*;
 
 import java.util.List;
 
-
-
 public record UpdateOrderRequest(
 
         @NotNull
         @Positive
         Long userId,
-
 
         @Size(min = 1, max = 100)
         List<@Valid OrderItemRequest> items,

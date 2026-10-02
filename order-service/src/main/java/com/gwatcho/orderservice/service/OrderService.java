@@ -52,7 +52,6 @@ public class OrderService {
         this.orderCreatedTopic = orderCreatedTopic;
     }
 
-
     // =========================================================
     // CHECKOUT / CREATE ORDER
     // =========================================================
@@ -88,7 +87,6 @@ public class OrderService {
             );
         }
 
-
         // =====================================================
         // CREATE ORDER
         // =====================================================
@@ -120,9 +118,7 @@ public class OrderService {
                         )
                         .build();
 
-
         String currency = null;
-
 
         // =====================================================
         // CREATE ORDER ITEMS
@@ -141,13 +137,11 @@ public class OrderService {
                 );
             }
 
-
             if (productSnapshotct.productId() == null) {
                 throw new IllegalArgumentException(
                         "Product ID must not be null"
                 );
             }
-
 
             // -------------------------------------------------
             // Verify productSnapshotct matches checkout item
@@ -162,7 +156,6 @@ public class OrderService {
                 );
             }
 
-
             // -------------------------------------------------
             // Validate productSnapshotct currency
             // -------------------------------------------------
@@ -176,7 +169,6 @@ public class OrderService {
                 );
             }
 
-
             // -------------------------------------------------
             // Validate productSnapshotct price
             // -------------------------------------------------
@@ -188,7 +180,6 @@ public class OrderService {
                                 productSnapshotct.productId()
                 );
             }
-
 
             // -------------------------------------------------
             // Validate quantity
@@ -202,7 +193,6 @@ public class OrderService {
                 );
             }
 
-
             // -------------------------------------------------
             // Validate stock
             // -------------------------------------------------
@@ -215,7 +205,6 @@ public class OrderService {
                 );
             }
 
-
             if (productSnapshotct.stockQuantity() <
                     itemRequest.quantity()) {
 
@@ -224,7 +213,6 @@ public class OrderService {
                                 productSnapshotct.productId()
                 );
             }
-
 
             // -------------------------------------------------
             // Determine order currency
@@ -239,7 +227,6 @@ public class OrderService {
                 );
             }
 
-
             // -------------------------------------------------
             // Calculate line total
             // -------------------------------------------------
@@ -251,7 +238,6 @@ public class OrderService {
                                             itemRequest.quantity()
                                     )
                             );
-
 
             // -------------------------------------------------
             // Create OrderItem
@@ -281,10 +267,8 @@ public class OrderService {
                             )
                             .build();
 
-
             order.addItem(orderItem);
         }
-
 
         // =====================================================
         // SET ORDER TOTAL / CURRENCY
@@ -307,7 +291,6 @@ public class OrderService {
         return toResponse(saved);
     }
 
-
     // =========================================================
     // GET ORDER
     // =========================================================
@@ -318,12 +301,11 @@ public class OrderService {
         );
     }
 
-
     // =========================================================
     // GET ALL ORDERS
     // =========================================================
     @Transactional(readOnly = true)
-    public List <OrderResponse> getOrders() {
+    public List<OrderResponse> getOrders() {
 
         return orderRepository
                 .findAll()
@@ -332,12 +314,11 @@ public class OrderService {
                 .toList();
     }
 
-
     // =========================================================
     // GET CUSTOMER ORDERS
     // =========================================================
     @Transactional(readOnly = true)
-    public List <OrderResponse> getCustomerOrders(
+    public List<OrderResponse> getCustomerOrders(
             Long customerId) {
 
         return orderRepository
@@ -346,7 +327,6 @@ public class OrderService {
                 .map(this::toResponse)
                 .toList();
     }
-
 
     // =========================================================
     // CANCEL ORDER
@@ -386,12 +366,11 @@ public class OrderService {
                 );
     }
 
-
     // =========================================================
     // ENTITY -> RESPONSE
     // =========================================================
     private OrderResponse toResponse(Order order) {
-        List <OrderItemResponse> items =
+        List<OrderItemResponse> items =
                 order.getItems()
                         .stream()
                         .map(item ->
@@ -405,7 +384,6 @@ public class OrderService {
                                 )
                         )
                         .toList();
-
 
         DeliveryAddress address = order.getDeliveryAddress();
         return new OrderResponse(
@@ -425,7 +403,6 @@ public class OrderService {
                 order.getUpdatedAt()
         );
     }
-
 
     private void createOutboxEvent(Order order) {
 
@@ -459,7 +436,6 @@ public class OrderService {
                                 .toList(),
                         order.getCreatedAt()
                 );
-
 
         try {
 

@@ -14,11 +14,13 @@ import com.gwatcho.orderservice.entity.OutboxStatus;
 import com.gwatcho.orderservice.outbox.OrderOutboxPublisher;
 import com.gwatcho.orderservice.repository.OrderOutboxEventRepository;
 import com.gwatcho.orderservice.service.OrderService;
+
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -33,13 +35,17 @@ class OrderKafkaEndToEndTest {
 
     private static final String KAFKA_BOOTSTRAP_SERVERS = "localhost:9092";
 
-    @Autowired private OrderService orderService;
+    @Autowired
+    private OrderService orderService;
 
-    @Autowired private OrderOutboxPublisher outboxPublisher;
+    @Autowired
+    private OrderOutboxPublisher outboxPublisher;
 
-    @Autowired private OrderOutboxEventRepository outboxRepository;
+    @Autowired
+    private OrderOutboxEventRepository outboxRepository;
 
-    @Autowired private ObjectMapper objectMapper;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     // =========================================================
     // CHECKOUT -> OUTBOX -> KAFKA

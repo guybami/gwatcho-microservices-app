@@ -22,10 +22,10 @@ public interface OrderRepository
     );
 
     @Query("""
-    select distinct o
-    from Order o
-    left join fetch o.items
-    where o.id = :id
-""")
+                select distinct o
+                from Order o
+                left join fetch o.items
+                where o.id = :id
+            """)
     Optional<Order> findByIdWithItems(@Param("id") Long id);
 }

@@ -8,10 +8,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gwatcho.orderservice.entity.Order;
 import com.gwatcho.orderservice.entity.OrderStatus;
 import com.gwatcho.orderservice.repository.OrderRepository;
+
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Properties;
 import java.util.UUID;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -25,40 +27,120 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 
+/**
+ * End-to-end test for:
+ * <p>
+ * ProductService
+ * ↓
+ * OrderService
+ * ↓
+ * Kafka: order.created
+ * ↓
+ * ┌───────────────┐
+ * │               │
+ * ▼               ▼
+ * PaymentService  DeliveryService
+ * │               │
+ * ▼               ▼
+ * payment.completed delivery.completed
+ * │
+ * ▼
+ * OrderService
+ * │
+ * ▼
+ * COMPLETED
+ * <p>
+ * <p>
+ * Authentication:
+ * <p>
+ * E2E Test
+ * ↓
+ * Keycloak
+ * ↓
+ * JWT
+ * ↓
+ * OrderService / DeliveryService
+ */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class OrderPaymentDeliveryEndToEndTest {
+    // =========================================================
+    // INFRASTRUCTURE
+    // =========================================================
+
     private static final String KAFKA_BOOTSTRAP_SERVERS = "localhost:9092";
+
+    private static final String KEYCLOAK_TOKEN_URL = "http://localhost:8080/realms/gwatcho-shop"
+            + "/protocol/openid-connect/token";
 
     private static final String PRODUCT_SERVICE_URL = "http://localhost:8083/product-service";
 
     private static final String DELIVERY_SERVICE_URL = "http://localhost:8084/delivery-service";
 
+    // =========================================================
+    // KAFKA TOPICS
+    // =========================================================
+
     private static final String PAYMENT_COMPLETED_TOPIC = "payment.completed";
 
     private static final String DELIVERY_COMPLETED_TOPIC = "delivery.completed";
 
+    // =========================================================
+    // TEST CONFIGURATION
+    // =========================================================
+
     private static final int TIMEOUT_SECONDS = 30;
 
-    @LocalServerPort private int port;
+    private static final String TEST_CLIENT_ID = "e2e-test-client";
 
-    @Autowired private TestRestTemplate restTemplate;
+    private static final String TEST_USERNAME = "e2e-test-user";
 
-    @Autowired private ObjectMapper objectMapper;
+    // =========================================================
+    // SPRING
+    // =========================================================
 
-    @Autowired private OrderRepository orderRepository;
+    @LocalServerPort
+    private int port;
+
+    @Autowired
+    private TestRestTemplate restTemplate;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @Autowired
+    private OrderRepository orderRepository;
+
+    // =========================================================
+    // MAIN E2E TEST
+    // =========================================================
 
     @Test
     void shouldProcessOrderPaymentAndDeliveryEndToEnd() throws Exception {
         // =====================================================
-        // 1. Verify ProductService
+        // 0. AUTHENTICATION
+        // =====================================================
+
+        String accessToken = getAccessToken();
+
+        assertThat(accessToken).as("Keycloak access token").isNotBlank();
+
+        System.out.println("E2E authentication successful");
+
+        // =====================================================
+        // 1. VERIFY PRODUCT SERVICE
         // =====================================================
 
         Long productId = 1L;
 
         ResponseEntity<String> productResponse = restTemplate.getRestTemplate().exchange(
-                PRODUCT_SERVICE_URL + "/products/{id}", HttpMethod.GET, null, String.class, productId);
+                PRODUCT_SERVICE_URL + "/api/products/{id}", HttpMethod.GET, authenticatedRequest(accessToken), String.class, productId);
+
+        System.out.println("Product status: " + productResponse.getStatusCode());
 
         assertThat(productResponse.getStatusCode()).isEqualTo(HttpStatus.OK);
 
@@ -71,30 +153,35 @@ class OrderPaymentDeliveryEndToEndTest {
         System.out.println("Product verified: productId=" + productId);
 
         // =====================================================
-        // 2. Checkout / create order
+        // 2. CHECKOUT / CREATE ORDER
         // =====================================================
 
         String requestBody = """
-        {
-            "customerId" : 200, "currency" : "EUR",
-                "street" : "E2E Test Street 100",
-                "postalCode" : "74172",
-                "city" : "Neckarsulm",
-                "country" : "DE",
-                "paymentMethod"
-          : "CARD",
-                "items" : [{"productId" : 1, "quantity" : 2}]
-        }
-        """;
+                {
+                    "customerId": 200,
+                    "currency": "EUR",
+                    "paymentMethod": "CARD",
+                    "deliveryAddress": {
+                        "street": "E2E Test Street 100",
+                        "postalCode": "74172",
+                        "city": "Neckarsulm",
+                        "country": "DE"
+                    },
+                    "items": [
+                        {
+                            "productId": 1,
+                            "quantity": 2
+                        }
+                    ]
+                }
+                """;
 
-        HttpHeaders headers = new HttpHeaders();
-
-        headers.set("Content-Type", "application/json");
+        HttpHeaders headers = jsonHeaders(accessToken);
 
         HttpEntity<String> request = new HttpEntity<>(requestBody, headers);
 
-        ResponseEntity<String> checkoutResponse = restTemplate.exchange(
-                "http://localhost:" + port + "/order-service/orders/checkout", HttpMethod.POST, request, String.class);
+        ResponseEntity<String> checkoutResponse =
+                restTemplate.exchange("http://localhost:" + port + "/order-service/orders/checkout", HttpMethod.POST, request, String.class);
 
         System.out.println("Checkout status: " + checkoutResponse.getStatusCode());
 
@@ -113,7 +200,7 @@ class OrderPaymentDeliveryEndToEndTest {
         System.out.println("Order created: orderId=" + orderId);
 
         // =====================================================
-        // 3. Wait for payment.completed
+        // 3. WAIT FOR PAYMENT.COMPLETED
         // =====================================================
 
         PaymentCompletedEvent paymentEvent = waitForPaymentCompleted(orderId);
@@ -127,16 +214,14 @@ class OrderPaymentDeliveryEndToEndTest {
         System.out.println("Payment completed: paymentId=" + paymentEvent.paymentId() + ", orderId=" + orderId);
 
         // =====================================================
-        // 4. Wait for DeliveryService to create delivery
-        //
-        // We verify this through delivery.completed later.
-        // The delivery status is then driven through the
-        // DeliveryService REST endpoint.
+        // 4. WAIT FOR DELIVERY CREATION
         // =====================================================
 
-        Long deliveryId = waitForDelivery(orderId);
+        Long deliveryId = waitForDelivery(orderId, accessToken);
 
         assertThat(deliveryId).isNotNull();
+
+        assertThat(deliveryId).isPositive();
 
         System.out.println("Delivery created: deliveryId=" + deliveryId + ", orderId=" + orderId);
 
@@ -144,22 +229,22 @@ class OrderPaymentDeliveryEndToEndTest {
         // 5. CREATED -> PREPARING
         // =====================================================
 
-        updateDeliveryStatus(deliveryId, "PREPARING");
+        updateDeliveryStatus(deliveryId, "PREPARING", accessToken);
 
         // =====================================================
         // 6. PREPARING -> SHIPPED
         // =====================================================
 
-        updateDeliveryStatus(deliveryId, "SHIPPED");
+        updateDeliveryStatus(deliveryId, "SHIPPED", accessToken);
 
         // =====================================================
         // 7. SHIPPED -> DELIVERED
         // =====================================================
 
-        updateDeliveryStatus(deliveryId, "DELIVERED");
+        updateDeliveryStatus(deliveryId, "DELIVERED", accessToken);
 
         // =====================================================
-        // 8. Wait for delivery.completed
+        // 8. WAIT FOR DELIVERY.COMPLETED
         // =====================================================
 
         DeliveryCompletedEvent deliveryEvent = waitForDeliveryCompleted(orderId);
@@ -173,8 +258,7 @@ class OrderPaymentDeliveryEndToEndTest {
         System.out.println("Delivery completed: deliveryId=" + deliveryId + ", orderId=" + orderId);
 
         // =====================================================
-        // 9. Wait for OrderService to process
-        //    delivery.completed
+        // 9. WAIT FOR ORDER TO BECOME COMPLETED
         // =====================================================
 
         Order completedOrder = waitForOrderStatus(orderId, OrderStatus.COMPLETED);
@@ -189,47 +273,106 @@ class OrderPaymentDeliveryEndToEndTest {
 
         assertThat(completedOrder.getStatus()).isEqualTo(OrderStatus.COMPLETED);
 
-        System.out.println(
+        // =====================================================
+        // SUCCESS
+        // =====================================================
+
+        System.out.printf(
                 """
-                
-                ==========================================
-                E2E TEST SUCCESS
-                ==========================================
-                orderId     = %s
-                paymentId   = %s
-                deliveryId  = %s
-                orderStatus = %s
-                ==========================================
-                """.formatted(
-                        orderId,
-                        paymentEvent.paymentId(),
-                        deliveryId,
-                        completedOrder.getStatus()
-                )
-        );
+                        
+                        ==========================================
+                               E2E TEST SUCCESS
+                        ==========================================
+                        orderId     = %s
+                        paymentId   = %s
+                        deliveryId  = %s
+                        orderStatus = %s
+                        ==========================================
+                        %n""", orderId,
+        paymentEvent.paymentId(),
+        deliveryId,
+        completedOrder.getStatus()
+);
     }
 
     // =========================================================
-    // PRODUCT / DELIVERY
+    // KEYCLOAK AUTHENTICATION
     // =========================================================
 
-    private Long waitForDelivery(Long orderId) throws InterruptedException, JsonProcessingException {
+    private String getAccessToken() {
+        String clientSecret = getRequiredEnvironmentVariable("E2E_KEYCLOAK_CLIENT_SECRET");
+
+        String password = getRequiredEnvironmentVariable("E2E_KEYCLOAK_PASSWORD");
+
+        HttpHeaders headers = new HttpHeaders();
+
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+
+        form.add("grant_type", "password");
+
+        form.add("client_id", TEST_CLIENT_ID);
+
+        form.add("client_secret", clientSecret);
+
+        form.add("username", TEST_USERNAME);
+
+        form.add("password", password);
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
+
+        ResponseEntity<String> response = restTemplate.getRestTemplate().exchange(KEYCLOAK_TOKEN_URL, HttpMethod.POST, request, String.class);
+
+        assertThat(response.getStatusCode()).as("Keycloak token endpoint").isEqualTo(HttpStatus.OK);
+
+        assertThat(response.getBody()).isNotNull();
+
+        try {
+            JsonNode json = objectMapper.readTree(response.getBody());
+            JsonNode accessToken = json.get("access_token");
+            assertThat(accessToken).as("Keycloak access_token").isNotNull();
+            assertThat(accessToken.asText()).isNotBlank();
+
+            return accessToken.asText();
+
+        } catch (JsonProcessingException e) {
+            throw new AssertionError("Unable to parse Keycloak token response", e);
+        }
+    }
+
+    // =========================================================
+    // HTTP HEADERS
+    // =========================================================
+
+    private HttpEntity<Void> authenticatedRequest(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+
+        headers.setBearerAuth(accessToken);
+
+        return new HttpEntity<>(headers);
+    }
+
+    private HttpHeaders jsonHeaders(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        headers.setBearerAuth(accessToken);
+
+        return headers;
+    }
+
+    // =========================================================
+    // DELIVERY
+    // =========================================================
+
+    private Long waitForDelivery(Long orderId, String accessToken) throws InterruptedException, JsonProcessingException {
         long timeout = System.currentTimeMillis() + TIMEOUT_SECONDS * 1_000L;
 
         while (System.currentTimeMillis() < timeout) {
-            /*
-             * Replace this section with the actual delivery
-             * GET endpoint if DeliveryController exposes one.
-             *
-             * The preferred implementation is:
-             *
-             * GET /delivery-service/deliveries/order/{orderId}
-             */
-
-            ResponseEntity<String> response = restTemplate.getForEntity("http://localhost:8084/"
-                            + "delivery-service/"
-                            + "deliveries/order/{orderId}",
-                    String.class, orderId);
+            ResponseEntity<String> response = restTemplate.exchange(
+                    DELIVERY_SERVICE_URL + "/deliveries/order/{orderId}", HttpMethod.GET, authenticatedRequest(accessToken), String.class, orderId);
 
             if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
                 JsonNode json = objectMapper.readTree(response.getBody());
@@ -250,27 +393,23 @@ class OrderPaymentDeliveryEndToEndTest {
     // DELIVERY STATUS
     // =========================================================
 
-    private void updateDeliveryStatus(Long deliveryId, String status) {
+    private void updateDeliveryStatus(Long deliveryId, String status, String accessToken) {
         String body = """
-        {
-            "status" : "%s"
-        }
-        """.formatted(status);
+                {
+                    "status" : "%s"
+                }
+                """.formatted(status);
 
-        HttpHeaders headers = new HttpHeaders();
-
-        headers.set("Content-Type", "application/json");
+        HttpHeaders headers = jsonHeaders(accessToken);
 
         HttpEntity<String> request = new HttpEntity<>(body, headers);
 
-        ResponseEntity<String> response = restTemplate.exchange("http://localhost:8084/"
-                        + "delivery-service/"
-                        + "deliveries/{deliveryId}/status",
-                HttpMethod.PUT, request, String.class, deliveryId);
+        ResponseEntity<String> response =
+                restTemplate.exchange(DELIVERY_SERVICE_URL + "/deliveries/{deliveryId}/status", HttpMethod.PUT, request, String.class, deliveryId);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getStatusCode()).as("Delivery status update: " + status).isEqualTo(HttpStatus.OK);
 
-        System.out.println("Delivery status updated: deliveryId=" + deliveryId + ", status=" + status);
+        System.out.println("Delivery status updated: " + deliveryId + " -> " + status);
     }
 
     // =========================================================
@@ -290,7 +429,9 @@ class OrderPaymentDeliveryEndToEndTest {
                     JsonNode json = objectMapper.readTree(record.value());
 
                     if (json.has("orderId") && json.get("orderId").asLong() == orderId) {
-                        return new PaymentCompletedEvent(json.get("paymentId").asLong(), json.get("orderId").asLong());
+                        return new PaymentCompletedEvent(json.get("paymentId").asLong(),
+
+                                json.get("orderId").asLong());
                     }
                 }
             }
@@ -317,7 +458,9 @@ class OrderPaymentDeliveryEndToEndTest {
                     JsonNode json = objectMapper.readTree(record.value());
 
                     if (json.has("orderId") && json.get("orderId").asLong() == orderId) {
-                        return new DeliveryCompletedEvent(json.get("deliveryId").asLong(), json.get("orderId").asLong());
+                        return new DeliveryCompletedEvent(json.get("deliveryId").asLong(),
+
+                                json.get("orderId").asLong());
                     }
                 }
             }
@@ -346,7 +489,10 @@ class OrderPaymentDeliveryEndToEndTest {
 
         Order finalOrder = orderRepository.findById(orderId).orElse(null);
 
-        assertThat(finalOrder).as("Order must exist after E2E processing").isNotNull();
+        assertThat(finalOrder)
+                .as("Order must exist after "
+                        + "E2E processing")
+                .isNotNull();
 
         assertThat(finalOrder.getStatus()).as("Final order status").isEqualTo(expectedStatus);
 
@@ -376,10 +522,26 @@ class OrderPaymentDeliveryEndToEndTest {
     }
 
     // =========================================================
+    // ENVIRONMENT VARIABLES
+    // =========================================================
+
+    private String getRequiredEnvironmentVariable(String name) {
+        String value = System.getenv(name);
+
+        if (value == null || value.isBlank()) {
+            throw new IllegalStateException("Required environment variable is missing: " + name);
+        }
+
+        return value;
+    }
+
+    // =========================================================
     // TEST EVENTS
     // =========================================================
 
-    private record PaymentCompletedEvent(Long paymentId, Long orderId) {}
+    private record PaymentCompletedEvent(Long paymentId, Long orderId) {
+    }
 
-    private record DeliveryCompletedEvent(Long deliveryId, Long orderId) {}
+    private record DeliveryCompletedEvent(Long deliveryId, Long orderId) {
+    }
 }
