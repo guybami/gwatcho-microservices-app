@@ -17,3 +17,5 @@ spring:
         jwt:
           issuer-uri: http://localhost:8080/realms/gwatcho-shop
           jwk-set-uri: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+
+

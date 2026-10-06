@@ -3,71 +3,43 @@ package com.gwatcho.userservice.kafka;
 import com.gwatcho.userservice.entity.OutboxEvent;
 import com.gwatcho.userservice.entity.OutboxStatus;
 import com.gwatcho.userservice.repository.OutboxEventRepository;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
-
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.concurrent.Future;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class OutboxEventPublisher {
-
     private static final String USER_CREATED_TOPIC = "user.created";
 
     private final OutboxEventRepository outboxEventRepository;
 
-    private final KafkaProducer<String, String> kafkaProducer;
+    private final KafkaTemplate<String, String> kafkaTemplate;
 
     @Scheduled(fixedDelay = 1000)
-    public void publishEvents() {
-
-        List<OutboxEvent> events =
-                outboxEventRepository
-                        .findTop100ByStatusOrderByCreatedAtAsc(
-                                OutboxStatus.NEW
-                        );
+    public void publishEvents() throws ExecutionException, InterruptedException {
+        List<OutboxEvent> events = outboxEventRepository.findTop100ByStatusOrderByCreatedAtAsc(OutboxStatus.NEW);
 
         for (OutboxEvent event : events) {
-
             try {
+                kafkaTemplate.send(USER_CREATED_TOPIC, event.getAggregateId(), event.getPayload()).get();
 
-                ProducerRecord<String, String> record =
-                        new ProducerRecord<>(
-                                USER_CREATED_TOPIC,
-                                event.getAggregateId(),
-                                event.getPayload()
-                        );
+                log.info("Kafka message sent: topic={}, aggregateId={}, eventId={}", USER_CREATED_TOPIC, event.getAggregateId(),
+                        event.getEventId());
 
-                Future<RecordMetadata> future =
-                        kafkaProducer.send(record);
-
-                RecordMetadata metadata =
-                        future.get();
-
-                log.info(
-                        "Kafka message sent: topic={}, partition={}, offset={}",
-                        metadata.topic(),
-                        metadata.partition(),
-                        metadata.offset()
-                );
                 event.markPublished();
+
                 outboxEventRepository.save(event);
+
             } catch (Exception e) {
-                log.error(
-                        "Could not publish event {}",
-                        event.getEventId(),
-                        e
-                );
+                log.error("Could not publish event {}", event.getEventId(), e);
+                throw e;
             }
         }
     }

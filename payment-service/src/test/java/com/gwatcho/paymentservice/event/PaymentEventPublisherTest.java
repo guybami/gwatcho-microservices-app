@@ -1,132 +1,96 @@
 package com.gwatcho.paymentservice.event;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.gwatcho.paymentservice.dto.DeliveryAddress;
-import com.gwatcho.paymentservice.entity.Payment;
-import com.gwatcho.paymentservice.entity.PaymentStatus;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
-
-import java.math.BigDecimal;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gwatcho.paymentservice.dto.DeliveryAddress;
+import com.gwatcho.paymentservice.entity.Payment;
+import java.math.BigDecimal;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.springframework.kafka.core.KafkaTemplate;
+
 class PaymentEventPublisherTest {
-
-    private KafkaProducer<String, String> producer;
-
+    private KafkaTemplate<String, String> kafkaTemplate;
     private PaymentEventPublisher publisher;
-
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-
-        producer = mock(KafkaProducer.class);
+        kafkaTemplate = mock(KafkaTemplate.class);
 
         objectMapper = new ObjectMapper();
 
-        publisher = new PaymentEventPublisher(
-                producer,
-                objectMapper
-        );
+        publisher = new PaymentEventPublisher(kafkaTemplate, objectMapper);
     }
 
     @Test
     void publishCompleted_sendsCorrectKafkaRecord() {
+        // Arrange
+        Payment payment = new Payment(100L, 10L, new BigDecimal("149.99"), "EUR", "CARD");
 
-        Payment payment = new Payment(
-                100L,
-                10L,
-                new BigDecimal("149.99"),
-                "EUR",
-                "CARD"
-        );
         payment.complete("TX-123");
-        publisher.publishCompleted(payment, new DeliveryAddress("Main Street 10",
-                "74172", "Neckarsulm", "DE"));
 
-        ArgumentCaptor<ProducerRecord<String, String>>
-                captor =
-                ArgumentCaptor.forClass(
-                        ProducerRecord.class
-                );
+        DeliveryAddress deliveryAddress = new DeliveryAddress("Main Street 10", "74172", "Neckarsulm", "DE");
 
-        verify(producer).send(captor.capture());
+        // Act
+        publisher.publishCompleted(payment, deliveryAddress);
 
-        ProducerRecord<String, String> record = captor.getValue();
+        // Assert
+        ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
 
-        assertEquals(
-                "payment.completed",
-                record.topic()
-        );
+        ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
 
-        assertEquals(
-                "100",
-                record.key()
-        );
+        ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
 
-        assertTrue(
-                record.value().contains("\"transactionId\":\"TX-123\"")
-        );
+        verify(kafkaTemplate, times(1)).send(topicCaptor.capture(), keyCaptor.capture(), valueCaptor.capture());
 
-        assertTrue(
-                record.value().contains("\"orderId\":100")
-        );
+        assertEquals("payment.completed", topicCaptor.getValue());
 
-        assertTrue(
-                record.value().contains("\"transactionId\":\"TX-123\"")
-        );
+        assertEquals("100", keyCaptor.getValue());
+
+        String value = valueCaptor.getValue();
+
+        assertNotNull(value);
+
+        assertTrue(value.contains("\"transactionId\":\"TX-123\""), "Kafka event should contain transactionId");
+
+        assertTrue(value.contains("\"orderId\":100"), "Kafka event should contain orderId");
+
+        verifyNoMoreInteractions(kafkaTemplate);
     }
 
     @Test
     void publishFailed_sendsCorrectKafkaRecord() {
-
-
-        Payment payment = new Payment(
-                100L,
-                10L,
-                new BigDecimal("149.99"),
-                "EUR",
-                "CARD"
-        );
+        // Arrange
+        Payment payment = new Payment(100L, 10L, new BigDecimal("149.99"), "EUR", "CARD");
 
         payment.failed("TX-123");
 
-        publisher.publishFailed(
-                payment,
-                "Card declined"
-        );
+        // Act
+        publisher.publishFailed(payment, "Card declined");
 
-        ArgumentCaptor<ProducerRecord<String, String>>
-                captor =
-                ArgumentCaptor.forClass(
-                        ProducerRecord.class
-                );
+        // Assert
+        ArgumentCaptor<String> topicCaptor = ArgumentCaptor.forClass(String.class);
 
-        verify(producer).send(captor.capture());
+        ArgumentCaptor<String> keyCaptor = ArgumentCaptor.forClass(String.class);
 
-        ProducerRecord<String, String> record =
-                captor.getValue();
+        ArgumentCaptor<String> valueCaptor = ArgumentCaptor.forClass(String.class);
 
-        assertEquals(
-                "payment.failed",
-                record.topic()
-        );
+        verify(kafkaTemplate, times(1)).send(topicCaptor.capture(), keyCaptor.capture(), valueCaptor.capture());
 
-        assertEquals(
-                "100",
-                record.key()
-        );
+        assertEquals("payment.failed", topicCaptor.getValue());
 
-        assertTrue(
-                record.value().contains(
-                        "\"reason\":\"Card declined\""
-                )
-        );
+        assertEquals("100", keyCaptor.getValue());
+
+        String value = valueCaptor.getValue();
+
+        assertNotNull(value);
+
+        assertTrue(value.contains("\"reason\":\"Card declined\""), "Kafka event should contain failure reason");
+
+        verifyNoMoreInteractions(kafkaTemplate);
     }
 }

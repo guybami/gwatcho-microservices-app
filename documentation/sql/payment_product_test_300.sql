@@ -1,6 +1,7 @@
 -- GWatcho Smart Shop - 300 test products
 -- Generated for product-service integration testing
 -- All stock quantities are greater than 80.
+use product_db;
 
 INSERT INTO products
     (sku, name, description, price, currency, stock_quantity, status, category, created_at, updated_at, version)
@@ -307,5 +308,5 @@ VALUES
     ('SKU-300', 'Performance Storage Product 300', 'Performance Storage Product 300 for the GWatcho Smart Shop catalog', 470.37, 'EUR', 146, 'ACTIVE', 'Storage', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 0);
 
 -- Verify:
--- SELECT COUNT(*) FROM products;
--- SELECT MIN(stock_quantity), MAX(stock_quantity) FROM products;
+ SELECT COUNT(*) FROM products;
+ SELECT MIN(stock_quantity), MAX(stock_quantity) FROM products;

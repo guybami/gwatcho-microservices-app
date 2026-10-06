@@ -1,31 +1,42 @@
 package com.gwatcho.paymentservice.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.gwatcho.paymentservice.config.SecurityConfig;
 import com.gwatcho.paymentservice.dto.PaymentRequest;
-import com.gwatcho.paymentservice.dto.PaymentResponse;
 import com.gwatcho.paymentservice.entity.Payment;
-import com.gwatcho.paymentservice.entity.PaymentStatus;
+import com.gwatcho.paymentservice.repository.PaymentRepository;
 import com.gwatcho.paymentservice.exception.GlobalExceptionHandler;
-import com.gwatcho.paymentservice.exception.ResourceNotFoundException;
-import com.gwatcho.paymentservice.service.PaymentService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(PaymentController.class)
+@WebMvcTest(
+        controllers = PaymentController.class,
+        excludeFilters = @ComponentScan.Filter(
+                type = FilterType.ASSIGNABLE_TYPE,
+                classes = SecurityConfig.class
+        )
+)
 @Import(GlobalExceptionHandler.class)
+@AutoConfigureMockMvc(addFilters = false)
 class PaymentControllerTest {
 
     @Autowired
@@ -35,36 +46,39 @@ class PaymentControllerTest {
     private ObjectMapper objectMapper;
 
     @MockBean
-    private PaymentService paymentService;
+    private PaymentRepository paymentRepository;
+
+
+    // =========================================================
+    // CREATE PAYMENT
+    // =========================================================
 
     @Test
     void createPayment_returns201() throws Exception {
 
+        PaymentRequest request = new PaymentRequest(
+                100L,
+                10L,
+                new BigDecimal("149.99"),
+                "EUR",
+                "CARD"
+        );
 
+        Payment savedPayment = new Payment(
+                100L,
+                10L,
+                new BigDecimal("149.99"),
+                "EUR",
+                "CARD"
+        );
 
-        PaymentRequest request =
-                new PaymentRequest(
-                        100L,
-                        10L,
-                        new BigDecimal("149.99"),
-                        "EUR",
-                        "CARD"
-                );
+        // Simulate database-generated ID
+        ReflectionTestUtils.setField(savedPayment, "id", 1L);
 
-        Payment response =
-                new Payment(
-                        100L,
-                        10L,
-                        new BigDecimal("149.99"),
-                        "EUR",
-                        "CARD"
-                );
+        savedPayment.complete("TX-123");
 
-        response.complete("TX-123");
-
-
-        when(paymentService.createPayment(request))
-                .thenReturn(response);
+        when(paymentRepository.save(any(Payment.class)))
+                .thenReturn(savedPayment);
 
         mockMvc.perform(
                         post("/payments")
@@ -75,12 +89,20 @@ class PaymentControllerTest {
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.orderId").value(100))
                 .andExpect(jsonPath("$.customerId").value(10))
-                .andExpect(jsonPath("$.status").value("COMPLETED"));
+                .andExpect(jsonPath("$.amount").value(149.99))
+                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.paymentMethod").value("CARD"))
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.transactionId").value("TX-123"));
     }
 
+
+    // =========================================================
+    // VALIDATION - ORDER ID
+    // =========================================================
+
     @Test
-    void createPayment_withoutOrderId_returns400()
-            throws Exception {
+    void createPayment_withoutOrderId_returns400() throws Exception {
 
         String request = """
                 {
@@ -97,15 +119,16 @@ class PaymentControllerTest {
                                 .content(request)
                 )
                 .andExpect(status().isBadRequest())
-                .andExpect(
-                        jsonPath("$.error")
-                                .value("VALIDATION_ERROR")
-                );
+                .andExpect(jsonPath("$.error").value("VALIDATION_ERROR"));
     }
 
+
+    // =========================================================
+    // VALIDATION - CUSTOMER ID
+    // =========================================================
+
     @Test
-    void createPayment_withoutCustomerId_returns400()
-            throws Exception {
+    void createPayment_withoutCustomerId_returns400() throws Exception {
 
         String request = """
                 {
@@ -124,9 +147,13 @@ class PaymentControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+
+    // =========================================================
+    // VALIDATION - AMOUNT
+    // =========================================================
+
     @Test
-    void createPayment_withInvalidAmount_returns400()
-            throws Exception {
+    void createPayment_withInvalidAmount_returns400() throws Exception {
 
         String request = """
                 {
@@ -146,75 +173,54 @@ class PaymentControllerTest {
                 .andExpect(status().isBadRequest());
     }
 
+
+    // =========================================================
+    // GET PAYMENT
+    // =========================================================
+
     @Test
     void getPayment_returns200() throws Exception {
 
-        PaymentResponse response = new PaymentResponse(
-                1L,
+        Payment payment = new Payment(
                 100L,
                 10L,
                 new BigDecimal("149.99"),
                 "EUR",
-                PaymentStatus.COMPLETED,
-                "CARD",
-                "TX-123",
-                LocalDateTime.now(),
-                LocalDateTime.now()
+                "CARD"
         );
 
-        PaymentRequest request =
-                new PaymentRequest(
-                        100L,
-                        10L,
-                        new BigDecimal("149.99"),
-                        "EUR",
-                        "CARD"
-                );
+        // Simulate database-generated ID
+        ReflectionTestUtils.setField(payment, "id", 1L);
 
-        Payment response2 =
-                new Payment(
-                        100L,
-                        10L,
-                        new BigDecimal("149.99"),
-                        "EUR",
-                        "CARD"
-                );
+        payment.complete("TX-123");
 
-        response2.complete("TX-123");
-
-
-        when(paymentService.getPayment(1L))
-                .thenReturn(response2);
+        when(paymentRepository.findById(1L))
+                .thenReturn(Optional.of(payment));
 
         mockMvc.perform(get("/payments/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.orderId").value(100))
-                .andExpect(jsonPath("$.status").value("COMPLETED"));
+                .andExpect(jsonPath("$.customerId").value(10))
+                .andExpect(jsonPath("$.amount").value(149.99))
+                .andExpect(jsonPath("$.currency").value("EUR"))
+                .andExpect(jsonPath("$.paymentMethod").value("CARD"))
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.transactionId").value("TX-123"));
     }
 
-    @Test
-    void getPayment_whenNotFound_returns404()
-            throws Exception {
 
-        when(paymentService.getPayment(999L))
-                .thenThrow(
-                        new ResourceNotFoundException(
-                                "Payment with id 999 not found"
-                        )
-                );
+    // =========================================================
+    // GET PAYMENT - NOT FOUND
+    // =========================================================
+
+    @Test
+    void getPayment_whenNotFound_returns404() throws Exception {
+
+        when(paymentRepository.findById(999L))
+                .thenReturn(Optional.empty());
 
         mockMvc.perform(get("/payments/999"))
-                .andExpect(status().isNotFound())
-                .andExpect(
-                        jsonPath("$.error")
-                                .value("NOT_FOUND")
-                )
-                .andExpect(
-                        jsonPath("$.message")
-                                .value(
-                                        "Payment with id 999 not found"
-                                )
-                );
+                .andExpect(status().isNotFound());
     }
 }

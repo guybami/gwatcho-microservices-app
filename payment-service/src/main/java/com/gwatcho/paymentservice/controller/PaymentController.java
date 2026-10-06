@@ -87,7 +87,7 @@ public class PaymentController {
 
     @PostMapping
     public ResponseEntity<Payment> createPayment(
-            @RequestBody PaymentRequest request
+            @Valid @RequestBody PaymentRequest request
     ) {
 
         Payment payment =

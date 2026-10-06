@@ -1,102 +1,60 @@
 package com.gwatcho.paymentservice.kafka;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gwatcho.paymentservice.event.PaymentCompletedEvent;
-
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-
+import com.gwatcho.paymentservice.exception.PaymentEventPublishingException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PaymentCompletedEventProducer {
+    private static final Logger log = LoggerFactory.getLogger(PaymentCompletedEventProducer.class);
 
-    private static final Logger log =
-            LoggerFactory.getLogger(
-                    PaymentCompletedEventProducer.class
-            );
-
-    private final KafkaProducer<String, String>
-            kafkaProducer;
-
-    private final ObjectMapper objectMapper;
-
+    private final KafkaTemplate<String, PaymentCompletedEvent> kafkaTemplate;
     private final String topic;
 
-
-    public PaymentCompletedEventProducer(
-            KafkaProducer<String, String> kafkaProducer,
-            ObjectMapper objectMapper,
-            @Value("${app.kafka.topics.payment-completed}")
-            String topic
-    ) {
-        this.kafkaProducer =
-                kafkaProducer;
-
-        this.objectMapper =
-                objectMapper;
-
-        this.topic =
-                topic;
+    public PaymentCompletedEventProducer(KafkaTemplate<String, PaymentCompletedEvent> kafkaTemplate,
+                                         @Value("${app.kafka.topics.payment-completed}") String topic) {
+        this.kafkaTemplate = kafkaTemplate;
+        this.topic = topic;
     }
 
+    public void publish(PaymentCompletedEvent event) {
+        if (event == null) {
+            throw new IllegalArgumentException("PaymentCompletedEvent must not be null");
+        }
 
-    public void publish(
-            PaymentCompletedEvent event
-    ) {
+        String key = String.valueOf(event.orderId());
+
+        log.info("Publishing payment.completed event: "
+                        + "orderId={}, paymentId={}, topic={}",
+                event.orderId(), event.paymentId(), topic);
 
         try {
+            kafkaTemplate.send(topic, key, event).whenComplete((result, exception) -> {
+                if (exception != null) {
+                    log.error("Failed to publish payment.completed event: "
+                                    + "orderId={}, paymentId={}, topic={}",
+                            event.orderId(), event.paymentId(), topic, exception);
 
-            String payload =
-                    objectMapper.writeValueAsString(
-                            event
-                    );
+                    return;
+                }
 
-
-            ProducerRecord<String, String> record =
-                    new ProducerRecord<>(
-                            topic,
-                            String.valueOf(
-                                    event.orderId()
-                            ),
-                            payload
-                    );
-
-
-            log.info(
-                    "Publishing payment.completed: orderId={}, paymentId={}, topic={}",
-                    event.orderId(),
-                    event.paymentId(),
-                    topic
-            );
-
-
-            kafkaProducer
-                    .send(record)
-                    .get();
-
-
-            log.info(
-                    "payment.completed published successfully: orderId={}",
-                    event.orderId()
-            );
+                log.info("payment.completed event published successfully: "
+                                + "orderId={}, paymentId={}, topic={}, partition={}, offset={}",
+                        event.orderId(), event.paymentId(), topic, result.getRecordMetadata().partition(),
+                        result.getRecordMetadata().offset());
+            });
 
         } catch (Exception ex) {
+            log.error("Unexpected error while publishing payment.completed event: "
+                            + "orderId={}, paymentId={}, topic={}",
+                    event.orderId(), event.paymentId(), topic, ex);
 
-            log.error(
-                    "Failed to publish payment.completed: orderId={}",
-                    event.orderId(),
-                    ex
-            );
-
-            throw new IllegalStateException(
-                    "Could not publish payment.completed",
-                    ex
-            );
+            throw new PaymentEventPublishingException(
+                    "Could not publish payment.completed event for orderId=" + event.orderId(), ex);
         }
     }
 }

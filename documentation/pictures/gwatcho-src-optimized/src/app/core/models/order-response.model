@@ -1,0 +1,10 @@
+
+export interface OrderResponse {
+  id: number;
+  customerId: number;
+  status: string;
+  totalAmount: number;
+  currency: string;
+  deliveryAddress: string;
+  createdAt: string;
+}

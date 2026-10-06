@@ -1,15 +1,37 @@
 package com.gwatcho.orderservice;
 
+import com.zaxxer.hikari.HikariDataSource;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
+import javax.sql.DataSource;
+
+
+@Slf4j
 @SpringBootApplication
 @EnableScheduling
 public class OrderServiceApplication {
+
+    @Bean
+    CommandLineRunner verifyDatasource(DataSource dataSource) {
+        return args -> {
+            HikariDataSource hikari = (HikariDataSource) dataSource;
+            log.info("========================================");
+            log.info("DATASOURCE VERIFICATION");
+            log.info("JDBC URL: {}", hikari.getJdbcUrl());
+            log.info("USERNAME: {}", hikari.getUsername());
+            log.info("========================================");
+        };
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(OrderServiceApplication.class, args);
     }
 
 }
+
+

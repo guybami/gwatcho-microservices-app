@@ -29,6 +29,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
@@ -66,6 +67,7 @@ import org.springframework.util.MultiValueMap;
  * ↓
  * OrderService / DeliveryService
  */
+@ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class OrderPaymentDeliveryEndToEndTest {
     // =========================================================
@@ -477,11 +479,23 @@ class OrderPaymentDeliveryEndToEndTest {
     private Order waitForOrderStatus(Long orderId, OrderStatus expectedStatus) throws InterruptedException {
         long timeout = System.currentTimeMillis() + TIMEOUT_SECONDS * 1_000L;
 
+        OrderStatus lastStatus = null;
+
         while (System.currentTimeMillis() < timeout) {
             Order order = orderRepository.findById(orderId).orElse(null);
 
-            if (order != null && order.getStatus() == expectedStatus) {
-                return order;
+            if (order != null) {
+                if (lastStatus != order.getStatus()) {
+                    System.out.println("E2E order status changed: orderId=" + orderId + ", status=" + order.getStatus());
+
+                    lastStatus = order.getStatus();
+                }
+
+                if (order.getStatus() == expectedStatus) {
+                    System.out.println("E2E order reached expected status: " + expectedStatus);
+
+                    return order;
+                }
             }
 
             Thread.sleep(500);
@@ -489,16 +503,14 @@ class OrderPaymentDeliveryEndToEndTest {
 
         Order finalOrder = orderRepository.findById(orderId).orElse(null);
 
-        assertThat(finalOrder)
-                .as("Order must exist after "
-                        + "E2E processing")
-                .isNotNull();
+        assertThat(finalOrder).as("Order must exist after E2E processing").isNotNull();
+
+        System.out.println("E2E final order status: orderId=" + orderId + ", status=" + finalOrder.getStatus());
 
         assertThat(finalOrder.getStatus()).as("Final order status").isEqualTo(expectedStatus);
 
         return finalOrder;
     }
-
     // =========================================================
     // KAFKA CONSUMER
     // =========================================================

@@ -1,19 +1,71 @@
 server:
   port: 8080
-  
+  servlet:
+    context-path: /payment-service
+
 spring:
-  datasource:
-    url: jdbc:mysql://user-db:3306/payment_db?serverTimezone=Europe/Berlin
-    username: root
-    password: root
-    driver-class-name: com.mysql.cj.jdbc.Driver
+  application:
+    name: payment-service
 
   kafka:
-    bootstrap-servers: kafka:9092
-    
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    key-serializer: org.apache.kafka.common.serialization.StringSerializer
+    value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+    producer:
+      acks: all
+      retries: 10
+
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP_ID:payment-service}
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+
+      properties:
+        spring.json.trusted.packages: com.gwatcho.paymentservice.event
+        spring.json.value.default.type: com.gwatcho.paymentservice.event.OrderCreatedEvent
+        spring.json.use.type.headers: false
+
+  datasource:
+    url: jdbc:mysql://payment-db:3306/payment_db?createDatabaseIfNotExist=true&serverTimezone=Europe/Berlin
+    username: root
+    password: root
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
   security:
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8080/realms/gwatcho-shop
-          jwk-set-uri: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs 
+          jwk-set-uri: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
+
+app:
+  kafka:
+    consumer:
+      group-id: payment-service
+
+    topics:
+      order-created: order.created
+      payment-completed: payment.completed
+
+logging:
+  level:
+    org.hibernate.SQL: OFF
+    org.hibernate.orm.jdbc.bind: OFF
+    org.hibernate.orm.jdbc.extract: OFF
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+

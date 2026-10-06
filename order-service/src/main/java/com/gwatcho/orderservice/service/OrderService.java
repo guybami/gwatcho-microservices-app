@@ -196,7 +196,6 @@ public class OrderService {
             // -------------------------------------------------
             // Validate stock
             // -------------------------------------------------
-
             if (productSnapshotct.stockQuantity() == null) {
 
                 throw new IllegalStateException(

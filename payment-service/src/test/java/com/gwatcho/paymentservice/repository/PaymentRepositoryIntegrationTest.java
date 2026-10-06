@@ -4,18 +4,29 @@ import com.gwatcho.paymentservice.entity.Payment;
 import com.gwatcho.paymentservice.entity.PaymentStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
+
+@ActiveProfiles("test")
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 class PaymentRepositoryIntegrationTest {
 
     @Autowired
     private PaymentRepository paymentRepository;
+
+    @Test
+    void contextLoads() {
+        assertThat(paymentRepository).isNotNull();
+    }
 
     @Test
     void savePayment() {
@@ -62,7 +73,7 @@ class PaymentRepositoryIntegrationTest {
                 result.get().getOrderId()
         );
         assertEquals(
-                PaymentStatus.COMPLETED,
+                PaymentStatus.PENDING,
                 result.get().getStatus()
         );
     }

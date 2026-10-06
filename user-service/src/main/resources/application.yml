@@ -1,9 +1,12 @@
+
+server:
+  port: ${SERVER_PORT:8081}
+  servlet:
+    context-path: /user-service
+
 spring:
   application:
     name: user-service
-
-  profiles:
-    active: local
 
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
@@ -29,11 +32,7 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:8080/realms/gwatcho-shop
-
-server:
-  port: ${SERVER_PORT:8081}
-  servlet:
-    context-path: /user-service
+          jwk-set-uri: http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs
 
 logging:
   level:

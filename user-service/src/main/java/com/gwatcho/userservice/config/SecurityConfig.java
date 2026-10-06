@@ -1,5 +1,6 @@
 package com.gwatcho.userservice.config;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -17,38 +18,16 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http) throws Exception {
-
-        http
-                .cors(cors -> {})
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/actuator/health").permitAll()
-                        .requestMatchers("/api/users/me").authenticated()
-                        .anyRequest().authenticated()
-                )
-                .oauth2ResourceServer(oauth2 ->
-                        oauth2.jwt(jwt -> {})
-                );
-
+        http.cors(cors -> {})
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/actuator/health").permitAll()
+                    .requestMatchers("/api/users/me").authenticated()
+                    .anyRequest().authenticated()
+            )
+            .oauth2ResourceServer(oauth2 ->
+                    oauth2.jwt(jwt -> {})
+            );
         return http.build();
-    }
-
-    @Bean
-    JwtDecoder jwtDecoder() {
-
-        NimbusJwtDecoder decoder = NimbusJwtDecoder
-                .withJwkSetUri(
-                        "http://keycloak:8080/realms/gwatcho-shop/protocol/openid-connect/certs"
-                )
-                .build();
-
-        OAuth2TokenValidator<Jwt> issuerValidator =
-                JwtValidators.createDefaultWithIssuer(
-                        "http://localhost:8080/realms/gwatcho-shop"
-                );
-
-        decoder.setJwtValidator(issuerValidator);
-
-        return decoder;
     }
 }

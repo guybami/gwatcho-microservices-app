@@ -1,0 +1,185 @@
+<section class="product-details-page">
+
+  <button
+    type="button"
+    class="back-button"
+    (click)="goBack()">
+    ← Back to Products
+  </button>
+
+
+  @if (loading()) {
+    <div class="loading">
+      Loading product...
+    </div>
+
+  } @else if (hasError()) {
+
+    <div class="error">
+
+      <h2>Unable to load product</h2>
+
+      <p>
+        The requested product could not be loaded.
+      </p>
+
+    </div>
+
+  } @else if (product()) {
+
+    <div class="product-details">
+
+      <!-- Product image -->
+      <div class="product-image">
+
+        <div class="image-placeholder">
+          {{ product()!.category }}
+        </div>
+
+      </div>
+
+
+      <!-- Product information -->
+      <div class="product-information">
+
+        <div class="category">
+          {{ product()!.category }}
+        </div>
+
+        <h1>
+          {{ product()!.name }}
+        </h1>
+
+        <div class="sku">
+          SKU: {{ product()!.sku }}
+        </div>
+
+        <p class="description">
+          {{ product()!.description }}
+        </p>
+
+        <div class="price">
+          {{ product()!.price | currency:product()!.currency }}
+        </div>
+
+
+        <!-- Stock -->
+        <div
+          class="stock"
+          [class.out-of-stock]="product()!.stockQuantity <= 0">
+
+          @if (product()!.stockQuantity > 0) {
+
+            In stock:
+            {{ product()!.stockQuantity }}
+
+          } @else {
+
+            Out of stock
+
+          }
+
+        </div>
+
+
+        <!-- Actions -->
+        <div class="actions">
+
+          <div class="quantity-selector">
+
+            <button
+              type="button"
+              (click)="decreaseQuantity()"
+              [disabled]="quantity() <= 1">
+              −
+            </button>
+
+            <span>
+              {{ quantity() }}
+            </span>
+
+            <button
+              type="button"
+              (click)="increaseQuantity()"
+              [disabled]="quantity() >= product()!.stockQuantity">
+              +
+            </button>
+
+          </div>
+
+
+          <button
+            type="button"
+            class="add-cart-button"
+            [disabled]="product()!.stockQuantity <= 0"
+            (click)="addToCart()">
+            Add to Cart
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- Product metadata -->
+    <div class="product-meta">
+
+      <h2>Product Information</h2>
+
+      <div class="meta-grid">
+
+        <div>
+          <span>Product ID</span>
+          <strong>{{ product()!.id }}</strong>
+        </div>
+
+        <div>
+          <span>SKU</span>
+          <strong>{{ product()!.sku }}</strong>
+        </div>
+
+        <div>
+          <span>Category</span>
+          <strong>{{ product()!.category }}</strong>
+        </div>
+
+        <div>
+          <span>Status</span>
+          <strong>{{ product()!.status }}</strong>
+        </div>
+
+        <div>
+          <span>Available Stock</span>
+          <strong>{{ product()!.stockQuantity }}</strong>
+        </div>
+
+        <div>
+          <span>Version</span>
+          <strong>{{ product()!.version }}</strong>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- Navigation -->
+    <div class="navigation">
+
+      <a routerLink="/products">
+        ← Continue Shopping
+      </a>
+
+    </div>
+
+  } @else {
+
+    <div class="error">
+      Product not found.
+    </div>
+
+  }
+
+</section>

@@ -1,0 +1,497 @@
+<section class="checkout-page">
+
+  <div class="checkout-header">
+
+    <h1>Checkout</h1>
+
+    <a routerLink="/cart">
+      ← Back to Cart
+    </a>
+
+  </div>
+
+
+  @if (items().length === 0) {
+
+    <div class="empty-checkout">
+      <h2>Your cart is empty</h2>
+      <p>
+        You need to add products to your cart before checkout.
+      </p>
+      <a
+        routerLink="/products"
+        class="browse-button">
+        Browse Products
+      </a>
+
+    </div>
+
+  } @else {
+
+    <div class="checkout-layout">
+      <!-- ================================================= -->
+      <!-- Order items -->
+      <!-- ================================================= -->
+      <div class="checkout-items">
+        <div class="section-header">
+          <h2>Your Order</h2>
+          <span>
+            {{ itemCount() }}
+            {{ itemCount() === 1 ? 'item' : 'items' }}
+          </span>
+
+        </div>
+
+
+        @for (item of items(); track item.product.id) {
+
+          <article class="checkout-item">
+            <div class="item-information">
+              <h3>
+                {{ item.product.name }}
+              </h3>
+
+              <p class="sku">
+                SKU: {{ item.product.sku }}
+              </p>
+
+              <p class="price">
+                {{ item.product.price | currency:item.product.currency }}
+                each
+              </p>
+            </div>
+
+            <!-- Quantity -->
+            <div class="quantity-selector">
+              <button
+                type="button"
+                (click)="updateQuantity(
+                    item.product.id,
+                    item.quantity - 1
+                  )"
+                [disabled]="item.quantity <= 1">
+                −
+              </button>
+
+              <span>
+                {{ item.quantity }}
+              </span>
+
+              <button
+                type="button"
+                (click)="updateQuantity(
+                  item.product.id,
+                  item.quantity + 1)"
+                [disabled]="
+                  item.quantity >= item.product.stockQuantity
+                ">
+                +
+              </button>
+
+            </div>
+
+
+            <!-- Item total -->
+            <div class="item-total">
+              {{
+                item.product.price * item.quantity
+                  | currency:item.product.currency
+              }}
+
+            </div>
+
+
+            <!-- Remove -->
+            <button
+              type="button"
+              class="remove-button"
+              (click)="removeItem(item.product.id)">
+              Remove
+            </button>
+
+          </article>
+
+        }
+
+      </div>
+
+
+      <!-- ================================================= -->
+      <!-- Order summary -->
+      <!-- ================================================= -->
+
+      <aside class="order-summary">
+        <h2>Order Summary</h2>
+        <div class="summary-row">
+          <span>
+            Items
+          </span>
+
+          <span>
+            {{ itemCount() }}
+          </span>
+
+        </div>
+
+
+        <div class="summary-row">
+
+          <span>
+            Subtotal
+          </span>
+
+          <span>
+            {{ total() | currency:'EUR' }}
+          </span>
+        </div>
+
+        <div class="summary-row">
+          <span>
+            Shipping
+          </span>
+
+          <span>
+            Free
+          </span>
+        </div>
+        <hr>
+        <div class="summary-total">
+          <span>
+            Total
+          </span>
+
+          <strong>
+            {{ total() | currency:'EUR' }}
+          </strong>
+        </div>
+
+
+        <!-- Continue checkout -->
+        <button
+          type="button" [disabled]="itemCount() === 0"
+          class="checkout-button" (click)="continueToCheckout()">
+          Continue to Checkout
+        </button>
+
+        <a
+          routerLink="/cart"
+          class="back-cart">
+          ← Back to Cart
+        </a>
+
+      </aside>
+
+    </div>
+
+  }
+
+</section>
+
+<!-- ========================= -->
+<!-- CUSTOMER / CHECKOUT        -->
+<!-- ========================= -->
+<section class="checkout-section">
+
+  @if (showCheckoutForm()) {
+    <h1>Checkout</h1>
+
+
+    <!-- Customer loading -->
+
+    @if (loadingCustomer()) {
+
+      <div class="loading">
+        Loading your customer information...
+      </div>
+    } @else if (hasError()) {
+
+      <div class="error">
+        {{ errorMessage() }}
+      </div>
+
+    }
+    @else {
+      <form
+        (ngSubmit)="placeOrder()"
+      >
+
+        <h2>Customer Information</h2>
+        <!-- First name / Last name -->
+        <div class="form-row">
+
+          <div class="form-group">
+
+            <label for="firstName">
+              First name
+            </label>
+
+            <input
+              id="firstName"
+              type="text"
+              name="firstName"
+              [(ngModel)]="deliveryAddress.firstName"
+              required
+            />
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="lastName">
+              Last name
+            </label>
+
+            <input
+              id="lastName"
+              type="text"
+              name="lastName"
+              [(ngModel)]="deliveryAddress.lastName"
+              required
+            />
+
+          </div>
+
+        </div>
+
+
+        <!-- Email -->
+
+        <div class="form-group">
+
+          <label for="email">
+            Email
+          </label>
+
+          <input
+            id="email"
+            type="email"
+            name="email"
+            [(ngModel)]="deliveryAddress.email"
+            required
+          />
+
+        </div>
+
+
+        <!-- Phone -->
+
+        <div class="form-group">
+
+          <label for="phone">
+            Phone
+          </label>
+
+          <input
+            id="phone"
+            type="tel"
+            name="phone"
+            [(ngModel)]="deliveryAddress.phone"
+          />
+
+        </div>
+
+
+        <!-- Delivery Address -->
+
+        <h2>Delivery Address</h2>
+
+
+        <!-- Street / House number -->
+
+        <div class="form-row">
+
+          <div class="form-group">
+
+            <label for="street">
+              Street
+            </label>
+
+            <input
+              id="street"
+              type="text"
+              name="street"
+              [(ngModel)]="deliveryAddress.street"
+              required
+            />
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="houseNumber">
+              House number
+            </label>
+
+            <input
+              id="houseNumber"
+              type="text"
+              name="houseNumber"
+              [(ngModel)]="deliveryAddress.houseNumber"
+              required
+            />
+
+          </div>
+
+        </div>
+
+
+        <!-- Postal code / City -->
+
+        <div class="form-row">
+
+          <div class="form-group">
+
+            <label for="postalCode">
+              Postal code
+            </label>
+
+            <input
+              id="postalCode"
+              type="text"
+              name="postalCode"
+              [(ngModel)]="deliveryAddress.postalCode"
+              required
+            />
+
+          </div>
+
+
+          <div class="form-group">
+
+            <label for="city">
+              City
+            </label>
+
+            <input
+              id="city"
+              type="text"
+              name="city"
+              [(ngModel)]="deliveryAddress.city"
+              required
+            />
+
+          </div>
+
+        </div>
+
+
+        <!-- Country -->
+
+        <div class="form-group">
+
+          <label for="country">
+            Country
+          </label>
+
+          <input
+            id="country"
+            type="text"
+            name="country"
+            [(ngModel)]="deliveryAddress.country"
+            required
+          />
+
+        </div>
+
+        <div class="address-actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            (click)="saveCustomerAddress()"
+            [disabled]="submitting()">
+            @if (submitting()) {
+              Saving...
+            } @else {
+              Save Address
+            }
+          </button>
+        </div>
+
+
+        <!-- ========================= -->
+        <!-- ORDER SUMMARY              -->
+        <!-- ========================= -->
+
+        <div class="order-summary">
+
+          <h2>Order Summary</h2>
+
+
+          <div class="summary-row">
+
+            <span>
+              Items
+            </span>
+
+            <strong>
+              {{ itemCount() }}
+            </strong>
+
+          </div>
+
+
+          <div class="summary-row">
+
+            <span>
+              Total
+            </span>
+
+            <strong>
+              {{ total() | currency }}
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <!-- ========================= -->
+        <!-- ACTIONS                    -->
+        <!-- ========================= -->
+
+        <div class="checkout-actions">
+          <button
+            type="button"
+            class="back-button"
+            (click)="showCheckoutForm.set(false)"
+          >
+            Back to Cart
+          </button>
+
+
+          <button
+            type="submit"
+            class="place-order-button"
+            [disabled]="
+              submitting() ||
+              itemCount() === 0
+            "
+          >
+
+            @if (submitting()) {
+              <span>
+                Processing...
+              </span>
+            } @else {
+
+              <span>
+                Place Order
+              </span>
+
+            }
+
+          </button>
+
+        </div>
+
+      </form>
+
+    }
+
+  }
+
+</section>
+
+
