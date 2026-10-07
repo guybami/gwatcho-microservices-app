@@ -1,0 +1,11 @@
+One engineering project that particularly showcases my skills is a **cloud-ready microservices-based e-commerce platform** that I designed and implemented using Java and Spring Boot.
+
+The goal of the project was to build a scalable and maintainable online-shop backend where individual business capabilities could be developed, tested and deployed independently. The system consists of several microservices, including **User, Product, Order, Payment and Delivery services**, together with an **API Gateway** and an Angular frontend.
+
+The main technologies I used were **Java, Spring Boot, Spring Security, REST APIs, Apache Kafka, MySQL, Angular, TypeScript, Docker, Kubernetes and Keycloak**. I implemented asynchronous communication between services using Kafka and applied patterns such as the **Transactional Outbox** to improve reliability when publishing business events. Authentication and authorization were implemented using **Keycloak, OAuth2/OIDC and JWT**. I also developed automated unit and integration tests and prepared the architecture for CI/CD and Kubernetes-based deployment.
+
+One of the main challenges was managing communication and consistency between distributed services. For example, creating an order can trigger payment and delivery processes, so failures in one service must not leave the system in an inconsistent state. I addressed this by using event-driven communication, clearly defined service boundaries and appropriate error-handling and testing strategies.
+
+Another challenge was integrating the Angular frontend, API Gateway and secured backend services. I had to resolve issues involving **CORS, JWT validation, issuer configuration, routing and authentication propagation through the gateway**. This required tracing requests across multiple services and analyzing Spring Security and Keycloak logs to identify the actual root causes.
+
+The project strengthened my ability to work across the full software lifecycle—from **architecture and implementation to testing, security, containerization and deployment**. More importantly, it gave me practical experience with the challenges of building and operating distributed systems rather than only developing individual applications.

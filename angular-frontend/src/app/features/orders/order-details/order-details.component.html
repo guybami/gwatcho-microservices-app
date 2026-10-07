@@ -1,0 +1,241 @@
+<div class="details-overlay" (click)="close()">
+
+  <section
+    class="details-modal"
+    (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <header class="details-header">
+
+      <div>
+        <span class="eyebrow">
+          Order Details
+        </span>
+
+        <h2>
+          Order #{{ order.id }}
+        </h2>
+
+        <p>
+          Placed on
+          {{ order.createdAt | date:'medium' }}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="close-button"
+        aria-label="Close"
+        (click)="close()">
+
+        ×
+
+      </button>
+
+    </header>
+
+
+    <!-- Status -->
+    <div class="order-status-section">
+
+      <div>
+        <span class="section-label">
+          Order Status
+        </span>
+
+        <span
+          class="status-badge"
+          [class]="getStatusClass(order.status)">
+
+          {{ order.status }}
+
+        </span>
+      </div>
+
+      <div class="status-payment">
+
+        <span class="section-label">
+          Payment
+        </span>
+
+        <strong>
+          {{ order.paymentMethod }}
+        </strong>
+
+      </div>
+
+    </div>
+
+
+    <!-- Products -->
+    <section class="details-section">
+
+      <div class="section-heading">
+
+        <h3>Order Items</h3>
+
+        <span>
+          {{ order.items.length }}
+          {{ order.items.length === 1 ? 'item' : 'items' }}
+        </span>
+
+      </div>
+
+
+      <div class="items-table">
+
+        @for (item of order.items; track item.productId) {
+
+          <div class="order-item">
+
+            <div class="product-icon">
+              {{ item.productName.charAt(0) }}
+            </div>
+
+
+            <div class="product-info">
+
+              <strong>
+                {{ item.productName }}
+              </strong>
+
+              <span>
+                {{ item.sku }}
+              </span>
+
+            </div>
+
+
+            <div class="product-price">
+              <span>
+                {{ item.quantity }} ×
+                {{ item.unitPrice | currency:order.currency }}
+              </span>
+
+              <strong>
+                {{ item.lineTotal | currency:order.currency }}
+              </strong>
+
+            </div>
+
+          </div>
+
+        }
+
+      </div>
+
+    </section>
+
+
+    <!-- Delivery -->
+    <section class="details-section">
+
+      <div class="section-heading">
+        <h3>Delivery Address</h3>
+      </div>
+
+      <div class="address-card">
+
+        <div class="address-icon">
+          <span>⌖</span>
+        </div>
+
+        <div>
+
+          <strong>
+            Delivery Address
+          </strong>
+
+          <p>
+            {{ order.street }}
+          </p>
+
+          <p>
+            {{ order.postalCode }}
+            {{ order.city }}
+          </p>
+
+          <p>
+            {{ order.country }}
+          </p>
+
+        </div>
+
+      </div>
+
+    </section>
+
+
+    <!-- Summary -->
+    <section class="summary-section">
+
+      <div class="summary-row">
+
+        <span>
+          Subtotal
+        </span>
+
+        <strong>
+          {{ order.totalAmount | currency:order.currency }}
+        </strong>
+
+      </div>
+
+
+      <div class="summary-row">
+
+        <span>
+          Shipping
+        </span>
+
+        <strong class="free">
+          Free
+        </strong>
+
+      </div>
+
+
+      <div class="summary-total">
+
+        <span>
+          Total
+        </span>
+
+        <strong>
+          {{ order.totalAmount | currency:order.currency }}
+        </strong>
+
+      </div>
+
+    </section>
+
+
+    <!-- Footer -->
+    <footer class="details-footer">
+
+      <div class="order-meta">
+
+        <span>
+          Order ID: #{{ order.id }}
+        </span>
+
+        <span>
+          Customer ID: {{ order.customerId }}
+        </span>
+
+      </div>
+
+      <button
+        type="button"
+        class="close-footer-button"
+        (click)="close()">
+
+        Close
+
+      </button>
+
+    </footer>
+
+  </section>
+
+</div>

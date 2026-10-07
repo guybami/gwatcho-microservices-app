@@ -11,3 +11,12 @@ export interface Product {
   version: number;
   createdAt: string;
 }
+
+export interface ProductItem {
+  productId: number;
+  sku: string;
+  productName: string;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+}

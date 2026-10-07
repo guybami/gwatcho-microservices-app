@@ -1,3 +1,4 @@
+import {DeliveryAddress} from "./checkout.model";
 
 export interface OrderResponse {
   id: number;
@@ -5,6 +6,6 @@ export interface OrderResponse {
   status: string;
   totalAmount: number;
   currency: string;
-  deliveryAddress: string;
+  deliveryAddress: DeliveryAddress;
   createdAt: string;
 }

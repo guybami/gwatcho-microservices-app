@@ -1,1 +1,283 @@
-<p>orders works!</p>
+<div class="orders-page">
+
+  <div class="orders-container">
+
+    <!-- Header -->
+    <header class="orders-header">
+
+      <div>
+        <div class="breadcrumb">
+          <a routerLink="/home">Home</a>
+          <span>/</span>
+          <span>My Orders</span>
+        </div>
+
+        <h1>My Orders</h1>
+
+        <p>
+          Track and manage your recent orders.
+        </p>
+      </div>
+
+      <div class="order-count">
+        <strong>{{ orders().length }}</strong>
+        <span>
+          {{ orders().length === 1 ? 'Order' : 'Orders' }}
+        </span>
+      </div>
+
+    </header>
+
+
+    <!-- Loading -->
+    @if (loading()) {
+
+      <div class="state-card loading-state">
+
+        <div class="spinner"></div>
+
+        <h3>Loading your orders...</h3>
+
+        <p>
+          Please wait while we retrieve your orders.
+        </p>
+
+      </div>
+
+    }
+
+
+    <!-- Error -->
+    @if (!loading() && error()) {
+
+      <div class="state-card error-state">
+
+        <div class="state-icon">!</div>
+
+        <h3>Unable to load orders</h3>
+
+        <p>{{ error() }}</p>
+
+        <button
+          type="button"
+          class="primary-button"
+          (click)="loadOrders()">
+
+          Try Again
+
+        </button>
+
+      </div>
+
+    }
+
+
+    @if (!loading() && !error()) {
+
+      <!-- Filters -->
+      <section class="filters">
+
+        <div class="search-box">
+
+          <span class="search-icon">⌕</span>
+
+          <input
+            type="search"
+            placeholder="Search by order number..."
+            [value]="searchTerm()"
+            (input)="setSearchTerm($any($event.target).value)"
+          />
+
+        </div>
+
+
+        <div class="status-filter">
+
+          <label for="status">
+            Status
+          </label>
+
+          <select
+            id="status"
+            [value]="selectedStatus()"
+            (change)="setStatus($any($event.target).value)">
+
+            <option value="ALL">
+              All Orders
+            </option>
+
+            @for (status of statuses(); track status) {
+
+              <option [value]="status">
+                {{ status }}
+              </option>
+
+            }
+
+          </select>
+
+        </div>
+
+      </section>
+
+
+      <!-- Empty -->
+      @if (filteredOrders().length === 0) {
+
+        <div class="state-card empty-state">
+
+          <div class="empty-icon">
+            🛍
+          </div>
+
+          <h3>No orders found</h3>
+
+          @if (orders().length === 0) {
+
+            <p>
+              You haven't placed any orders yet.
+            </p>
+
+            <a
+              routerLink="/products"
+              class="primary-button">
+
+              Start Shopping
+
+            </a>
+
+          } @else {
+
+            <p>
+              Try changing your search or status filter.
+            </p>
+
+          }
+
+        </div>
+
+      }
+
+
+      <!-- Order list -->
+      @if (filteredOrders().length > 0) {
+
+        <section class="orders-list">
+
+          @for (
+              order of filteredOrders();
+            track order.id
+            ) {
+
+            <article class="order-card">
+
+              <!-- Order top -->
+              <div class="order-top">
+
+                <div class="order-reference">
+
+                  <span class="order-label">
+                    Order
+                  </span>
+
+                  <h2>
+                    #{{ order.id }}
+                  </h2>
+
+                </div>
+
+                <span
+                  class="status-badge"
+                  [class]="getStatusClass(order.status)">
+
+                  {{ order.status }}
+
+                </span>
+
+              </div>
+
+
+              <!-- Order info -->
+              <div class="order-info">
+
+                <div class="info-item">
+
+                  <span class="info-label">
+                    Order date
+                  </span>
+
+                  <strong>
+                    {{ order.createdAt | date:'mediumDate' }}
+                  </strong>
+                </div>
+
+                <div class="info-item">
+
+                  <span class="info-label">
+                    Total
+                  </span>
+
+                  <strong class="order-total">
+                    {{ order.totalAmount | currency:order.currency }}
+                  </strong>
+
+                </div>
+
+
+                <div class="info-item">
+
+                  <span class="info-label">
+                    Currency
+                  </span>
+
+                  <strong>
+                    {{ order.currency }}
+                  </strong>
+
+                </div>
+
+              </div>
+
+
+              <!-- Footer -->
+              <div class="order-footer">
+
+                <span class="order-message">
+
+                  @if (order.status === 'CREATED') {
+                    Your order has been received.
+                  } @else {
+                    Order status: {{ order.status }}
+                  }
+
+                </span>
+
+                <button
+                  type="button"
+                  class="details-button"
+                  (click)="viewOrder(order)">
+                  View Details
+
+                </button>
+
+              </div>
+
+            </article>
+
+          }
+        </section>
+
+      }
+
+    }
+
+  </div>
+
+</div>
+
+@if (selectedOrder(); as order) {
+  <app-order-details
+    [order]="order"
+    (closed)="closeOrderDetails()">
+  </app-order-details>
+}

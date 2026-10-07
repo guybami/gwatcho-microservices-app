@@ -36,6 +36,12 @@ user-service -> 8081, order-service -> 8082, payment-service -> 8086, delivery-s
    #run docker
    docker run -d --name angular-frontend -p 4200:80 --network gwatcho-microservices-app_gwatcho-network gwatcho/angular-frontend
    
+ MAVEN
+ 
+    mvn test "-Dtest=PaymentCompletedEventProducerTest" "-DPaspring.profiles.active=test"  
+   
+   .\bin\windows\kafka-storage.bat format -t h2quyw4cSt6z-Hf-2Dx9jw -c .\config\server.properties
+   
    
    
    

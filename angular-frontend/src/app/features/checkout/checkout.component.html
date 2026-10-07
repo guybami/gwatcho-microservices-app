@@ -1,497 +1,770 @@
 <section class="checkout-page">
 
+  <!-- Header -->
   <div class="checkout-header">
+    <div>
+      <span class="page-eyebrow">SECURE CHECKOUT</span>
+      <h1>Checkout</h1>
+      <p>Complete your order in a few simple steps.</p>
+    </div>
 
-    <h1>Checkout</h1>
-
-    <a routerLink="/cart">
-      ← Back to Cart
-    </a>
-
+    @if (currentStep() < 4) {
+      <a routerLink="/cart" class="back-to-cart">
+        ← Back to Cart
+      </a>
+    }
   </div>
 
 
-  @if (items().length === 0) {
+  @if (items().length === 0 && currentStep() < 4) {
 
+    <!-- Empty cart -->
     <div class="empty-checkout">
+      <div class="empty-icon">🛒</div>
       <h2>Your cart is empty</h2>
-      <p>
-        You need to add products to your cart before checkout.
-      </p>
-      <a
-        routerLink="/products"
-        class="browse-button">
+      <p>You need to add products to your cart before checkout.</p>
+
+      <a routerLink="/products" class="btn btn-primary">
         Browse Products
       </a>
-
     </div>
 
   } @else {
 
-    <div class="checkout-layout">
-      <!-- ================================================= -->
-      <!-- Order items -->
-      <!-- ================================================= -->
-      <div class="checkout-items">
-        <div class="section-header">
-          <h2>Your Order</h2>
-          <span>
-            {{ itemCount() }}
-            {{ itemCount() === 1 ? 'item' : 'items' }}
-          </span>
+    <!-- ================================================ -->
+      <!-- Interactive horizontal stepper                  -->
+      <!-- ================================================ -->
 
+    <nav class="checkout-stepper" aria-label="Checkout progress">
+
+      <button
+        type="button"
+        class="step"
+        [class.active]="currentStep() === 1"
+        [class.completed]="currentStep() > 1"
+        [attr.aria-current]="currentStep() === 1 ? 'step' : null"
+        (click)="goToStep(1)"
+      >
+        <span class="step-circle">
+          @if (currentStep() > 1) {
+            ✓
+          } @else {
+            1
+          }
+        </span>
+
+        <span class="step-content">
+          <strong>Checkout</strong>
+          <small>Review your cart</small>
+        </span>
+      </button>
+
+      <span class="step-line" [class.completed]="currentStep() > 1"></span>
+
+      <button
+        type="button"
+        class="step"
+        [class.active]="currentStep() === 2"
+        [class.completed]="currentStep() > 2"
+        [disabled]="currentStep() < 2"
+        [attr.aria-current]="currentStep() === 2 ? 'step' : null"
+        (click)="goToStep(2)"
+      >
+        <span class="step-circle">
+          @if (currentStep() > 2) {
+            ✓
+          } @else {
+            2
+          }
+        </span>
+
+        <span class="step-content">
+          <strong>Delivery Address</strong>
+          <small>Where should we deliver?</small>
+        </span>
+      </button>
+
+      <span class="step-line" [class.completed]="currentStep() > 2"></span>
+
+      <button
+        type="button"
+        class="step"
+        [class.active]="currentStep() === 3"
+        [class.completed]="currentStep() > 3"
+        [disabled]="currentStep() < 3"
+        [attr.aria-current]="currentStep() === 3 ? 'step' : null"
+        (click)="goToStep(3)"
+      >
+        <span class="step-circle">
+          @if (currentStep() > 3) {
+            ✓
+          } @else {
+            3
+          }
+        </span>
+
+        <span class="step-content">
+          <strong>Order Summary</strong>
+          <small>Review and place order</small>
+        </span>
+      </button>
+
+      <span class="step-line" [class.completed]="currentStep() > 3"></span>
+
+      <button
+        type="button"
+        class="step"
+        [class.active]="currentStep() === 4"
+        [class.completed]="currentStep() === 4"
+        [disabled]="currentStep() < 4"
+        [attr.aria-current]="currentStep() === 4 ? 'step' : null"
+        (click)="goToStep(4)"
+      >
+        <span class="step-circle">
+          @if (currentStep() === 4) {
+            ✓
+          } @else {
+            4
+          }
+        </span>
+
+        <span class="step-content">
+          <strong>Confirmation</strong>
+          <small>Order completed</small>
+        </span>
+      </button>
+
+    </nav>
+
+
+    <!-- Global error -->
+    @if (hasError()) {
+      <div class="checkout-error" role="alert">
+        <span class="error-icon">!</span>
+        <div>
+          <strong>Something went wrong</strong>
+          <p>{{ errorMessage() }}</p>
+        </div>
+      </div>
+    }
+
+
+    <!-- ================================================ -->
+      <!-- STEP 1 - CHECKOUT                                -->
+      <!-- ================================================ -->
+
+    @if (currentStep() === 1) {
+
+      <div class="checkout-layout">
+
+        <div class="checkout-card">
+          <div class="card-header">
+            <div>
+              <span class="card-eyebrow">STEP 1</span>
+              <h2>Your Order</h2>
+              <p>Review the products and quantities in your cart.</p>
+            </div>
+
+            <span class="item-count">
+              {{ itemCount() }}
+              {{ itemCount() === 1 ? 'item' : 'items' }}
+            </span>
+          </div>
+
+          <div class="checkout-items">
+
+            @for (item of items(); track item.product.id) {
+
+              <article class="checkout-item">
+
+                <div class="item-information">
+                  <h3>{{ item.product.name }}</h3>
+
+                  <p class="sku">
+                    SKU: {{ item.product.sku }}
+                  </p>
+
+                  <p class="unit-price">
+                    {{ item.product.price | currency:item.product.currency }}
+                    each
+                  </p>
+                </div>
+
+                <div class="quantity-selector">
+                  <button
+                    type="button"
+                    (click)="updateQuantity(item.product.id, item.quantity - 1)"
+                    [disabled]="item.quantity <= 1"
+                    aria-label="Decrease quantity"
+                  >
+                    −
+                  </button>
+
+                  <span>{{ item.quantity }}</span>
+
+                  <button
+                    type="button"
+                    (click)="updateQuantity(item.product.id, item.quantity + 1)"
+                    [disabled]="item.quantity >= item.product.stockQuantity"
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <strong class="item-total">
+                  {{ item.product.price * item.quantity | currency:item.product.currency }}
+                </strong>
+
+                <button
+                  type="button"
+                  class="remove-button"
+                  (click)="removeItem(item.product.id)"
+                >
+                  Remove
+                </button>
+
+              </article>
+
+            }
+
+          </div>
         </div>
 
 
-        @for (item of items(); track item.product.id) {
+        <aside class="summary-card">
+          <div class="card-header compact">
+            <div>
+              <span class="card-eyebrow">TOTAL</span>
+              <h2>Order Summary</h2>
+            </div>
+          </div>
 
-          <article class="checkout-item">
-            <div class="item-information">
-              <h3>
-                {{ item.product.name }}
-              </h3>
+          <div class="summary-row">
+            <span>Items</span>
+            <strong>{{ itemCount() }}</strong>
+          </div>
 
-              <p class="sku">
-                SKU: {{ item.product.sku }}
-              </p>
+          <div class="summary-row">
+            <span>Subtotal</span>
+            <strong>{{ total() | currency:'EUR' }}</strong>
+          </div>
 
-              <p class="price">
-                {{ item.product.price | currency:item.product.currency }}
-                each
-              </p>
+          <div class="summary-row">
+            <span>Shipping</span>
+            <strong class="free">Free</strong>
+          </div>
+
+          <div class="summary-divider"></div>
+
+          <div class="summary-total">
+            <span>Total</span>
+            <strong>{{ total() | currency:'EUR' }}</strong>
+          </div>
+
+          <button
+            type="button"
+            class="btn btn-primary btn-full"
+            [disabled]="itemCount() === 0"
+            (click)="continueToCheckout()"
+          >
+            Continue to Delivery
+            <span>→</span>
+          </button>
+        </aside>
+
+      </div>
+    }
+
+
+    <!-- ================================================ -->
+      <!-- STEP 2 - DELIVERY ADDRESS                        -->
+      <!-- ================================================ -->
+
+    @if (currentStep() === 2) {
+
+      <div class="step-page">
+
+        @if (loadingCustomer()) {
+
+          <div class="loading-card">
+            <div class="spinner"></div>
+            <strong>Loading your customer information</strong>
+            <span>Please wait...</span>
+          </div>
+
+        } @else {
+
+          <form
+            #addressForm="ngForm"
+            (ngSubmit)="continueToSummary()"
+            class="profile-style-card"
+          >
+
+            <div class="card-header">
+              <div class="card-icon address-icon">📍</div>
+
+              <div>
+                <span class="card-eyebrow">STEP 2</span>
+                <h2>Delivery Address</h2>
+                <p>Where should we deliver your order?</p>
+              </div>
             </div>
 
-            <!-- Quantity -->
-            <div class="quantity-selector">
+
+            <div class="form-section-title">
+              <span class="mini-icon">👤</span>
+              Contact Information
+            </div>
+
+            <div class="form-grid">
+
+              <div class="form-group">
+                <label for="firstName">
+                  First name <span class="required">*</span>
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  name="firstName"
+                  [(ngModel)]="deliveryAddress.firstName"
+                  placeholder="Enter your first name"
+                  autocomplete="given-name"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="lastName">
+                  Last name <span class="required">*</span>
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  name="lastName"
+                  [(ngModel)]="deliveryAddress.lastName"
+                  placeholder="Enter your last name"
+                  autocomplete="family-name"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="email">
+                  Email address <span class="required">*</span>
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  name="email"
+                  [(ngModel)]="deliveryAddress.email"
+                  placeholder="you@example.com"
+                  autocomplete="email"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Phone number</label>
+                <input
+                  id="phone"
+                  type="tel"
+                  name="phone"
+                  [(ngModel)]="deliveryAddress.phone"
+                  placeholder="+49 170 1234567"
+                  autocomplete="tel"
+                />
+              </div>
+
+            </div>
+
+
+            <div class="form-section-title address-title">
+              <span class="mini-icon">🏠</span>
+              Address
+            </div>
+
+            <div class="form-grid">
+
+              <div class="form-group form-group-wide">
+                <label for="street">
+                  Street <span class="required">*</span>
+                </label>
+                <input
+                  id="street"
+                  type="text"
+                  name="street"
+                  [(ngModel)]="deliveryAddress.street"
+                  placeholder="e.g. Hauptstraße"
+                  autocomplete="street-address"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="houseNumber">
+                  House number <span class="required">*</span>
+                </label>
+                <input
+                  id="houseNumber"
+                  type="text"
+                  name="houseNumber"
+                  [(ngModel)]="deliveryAddress.houseNumber"
+                  placeholder="e.g. 25"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="postalCode">
+                  Postal code <span class="required">*</span>
+                </label>
+                <input
+                  id="postalCode"
+                  type="text"
+                  name="postalCode"
+                  [(ngModel)]="deliveryAddress.postalCode"
+                  placeholder="e.g. 74072"
+                  autocomplete="postal-code"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="city">
+                  City <span class="required">*</span>
+                </label>
+                <input
+                  id="city"
+                  type="text"
+                  name="city"
+                  [(ngModel)]="deliveryAddress.city"
+                  placeholder="e.g. Heilbronn"
+                  autocomplete="address-level2"
+                  required
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="country">
+                  Country <span class="required">*</span>
+                </label>
+                <select
+                  id="country"
+                  name="country"
+                  [(ngModel)]="deliveryAddress.country"
+                  autocomplete="country-name"
+                  required
+                >
+                  <option value="Germany">Germany</option>
+                  <option value="Austria">Austria</option>
+                  <option value="Switzerland">Switzerland</option>
+                  <option value="France">France</option>
+                  <option value="Belgium">Belgium</option>
+                  <option value="Netherlands">Netherlands</option>
+                  <option value="Luxembourg">Luxembourg</option>
+                </select>
+              </div>
+
+            </div>
+
+
+            <div class="step-actions">
+
               <button
                 type="button"
-                (click)="updateQuantity(
-                    item.product.id,
-                    item.quantity - 1
-                  )"
-                [disabled]="item.quantity <= 1">
-                −
+                class="btn btn-secondary"
+                (click)="goToStep(1)"
+                [disabled]="submitting()"
+              >
+                ← Back
               </button>
 
-              <span>
-                {{ item.quantity }}
-              </span>
+              <div class="action-group">
 
-              <button
-                type="button"
-                (click)="updateQuantity(
-                  item.product.id,
-                  item.quantity + 1)"
-                [disabled]="
-                  item.quantity >= item.product.stockQuantity
-                ">
-                +
-              </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  (click)="saveCustomerAddress()"
+                  [disabled]="submitting() || addressForm.invalid"
+                >
+                  @if (submitting()) {
+                    Saving...
+                  } @else {
+                    Save Address
+                  }
+                </button>
+
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  [disabled]="submitting() || addressForm.invalid"
+                >
+                  Continue to Summary
+                  <span>→</span>
+                </button>
+
+              </div>
 
             </div>
 
-
-            <!-- Item total -->
-            <div class="item-total">
-              {{
-                item.product.price * item.quantity
-                  | currency:item.product.currency
-              }}
-
-            </div>
-
-
-            <!-- Remove -->
-            <button
-              type="button"
-              class="remove-button"
-              (click)="removeItem(item.product.id)">
-              Remove
-            </button>
-
-          </article>
-
+          </form>
         }
 
       </div>
-
-
-      <!-- ================================================= -->
-      <!-- Order summary -->
-      <!-- ================================================= -->
-
-      <aside class="order-summary">
-        <h2>Order Summary</h2>
-        <div class="summary-row">
-          <span>
-            Items
-          </span>
-
-          <span>
-            {{ itemCount() }}
-          </span>
-
-        </div>
-
-
-        <div class="summary-row">
-
-          <span>
-            Subtotal
-          </span>
-
-          <span>
-            {{ total() | currency:'EUR' }}
-          </span>
-        </div>
-
-        <div class="summary-row">
-          <span>
-            Shipping
-          </span>
-
-          <span>
-            Free
-          </span>
-        </div>
-        <hr>
-        <div class="summary-total">
-          <span>
-            Total
-          </span>
-
-          <strong>
-            {{ total() | currency:'EUR' }}
-          </strong>
-        </div>
-
-
-        <!-- Continue checkout -->
-        <button
-          type="button" [disabled]="itemCount() === 0"
-          class="checkout-button" (click)="continueToCheckout()">
-          Continue to Checkout
-        </button>
-
-        <a
-          routerLink="/cart"
-          class="back-cart">
-          ← Back to Cart
-        </a>
-
-      </aside>
-
-    </div>
-
-  }
-
-</section>
-
-<!-- ========================= -->
-<!-- CUSTOMER / CHECKOUT        -->
-<!-- ========================= -->
-<section class="checkout-section">
-
-  @if (showCheckoutForm()) {
-    <h1>Checkout</h1>
-
-
-    <!-- Customer loading -->
-
-    @if (loadingCustomer()) {
-
-      <div class="loading">
-        Loading your customer information...
-      </div>
-    } @else if (hasError()) {
-
-      <div class="error">
-        {{ errorMessage() }}
-      </div>
-
     }
-    @else {
-      <form
-        (ngSubmit)="placeOrder()"
-      >
-
-        <h2>Customer Information</h2>
-        <!-- First name / Last name -->
-        <div class="form-row">
-
-          <div class="form-group">
-
-            <label for="firstName">
-              First name
-            </label>
-
-            <input
-              id="firstName"
-              type="text"
-              name="firstName"
-              [(ngModel)]="deliveryAddress.firstName"
-              required
-            />
-
-          </div>
 
 
-          <div class="form-group">
+    <!-- ================================================ -->
+      <!-- STEP 3 - ORDER SUMMARY                           -->
+      <!-- ================================================ -->
 
-            <label for="lastName">
-              Last name
-            </label>
+    @if (currentStep() === 3) {
 
-            <input
-              id="lastName"
-              type="text"
-              name="lastName"
-              [(ngModel)]="deliveryAddress.lastName"
-              required
-            />
+      <div class="step-page">
 
-          </div>
+        <div class="summary-grid">
 
-        </div>
+          <div class="summary-main">
 
+            <section class="profile-style-card">
+              <div class="card-header">
+                <div class="card-icon personal-icon">👤</div>
+                <div>
+                  <span class="card-eyebrow">STEP 3</span>
+                  <h2>Order Summary</h2>
+                  <p>Please review your order before placing it.</p>
+                </div>
+              </div>
 
-        <!-- Email -->
+              <div class="review-section">
+                <div class="review-header">
+                  <h3>Delivery Information</h3>
+                  <button
+                    type="button"
+                    class="text-button"
+                    (click)="goToStep(2)"
+                  >
+                    Edit
+                  </button>
+                </div>
 
-        <div class="form-group">
+                <div class="address-preview">
+                  <strong>
+                    {{ deliveryAddress.firstName }}
+                    {{ deliveryAddress.lastName }}
+                  </strong>
+                  <span>{{ deliveryAddress.email }}</span>
+                  @if (deliveryAddress.phone) {
+                    <span>{{ deliveryAddress.phone }}</span>
+                  }
+                  <span>
+                    {{ deliveryAddress.street }}
+                    {{ deliveryAddress.houseNumber }}
+                  </span>
+                  <span>
+                    {{ deliveryAddress.postalCode }}
+                    {{ deliveryAddress.city }}
+                  </span>
+                  <span>{{ deliveryAddress.country }}</span>
+                </div>
+              </div>
 
-          <label for="email">
-            Email
-          </label>
+              <div class="review-section">
+                <div class="review-header">
+                  <h3>Payment Method</h3>
+                </div>
 
-          <input
-            id="email"
-            type="email"
-            name="email"
-            [(ngModel)]="deliveryAddress.email"
-            required
-          />
+                <div class="payment-preview">
+                  <span class="payment-icon">💳</span>
+                  <div>
+                    <strong>Credit Card</strong>
+                    <span>Secure payment</span>
+                  </div>
+                </div>
+              </div>
 
-        </div>
+              <div class="review-section last">
+                <div class="review-header">
+                  <h3>Items</h3>
+                  <span class="muted">
+                    {{ itemCount() }}
+                    {{ itemCount() === 1 ? 'item' : 'items' }}
+                  </span>
+                </div>
 
+                <div class="review-items">
+                  @for (item of items(); track item.product.id) {
+                    <div class="review-item">
+                      <div>
+                        <strong>{{ item.product.name }}</strong>
+                        <span>
+                          {{ item.quantity }} ×
+                          {{ item.product.price | currency:item.product.currency }}
+                        </span>
+                      </div>
 
-        <!-- Phone -->
+                      <strong>
+                        {{ item.product.price * item.quantity | currency:item.product.currency }}
+                      </strong>
+                    </div>
+                  }
+                </div>
+              </div>
 
-        <div class="form-group">
-
-          <label for="phone">
-            Phone
-          </label>
-
-          <input
-            id="phone"
-            type="tel"
-            name="phone"
-            [(ngModel)]="deliveryAddress.phone"
-          />
-
-        </div>
-
-
-        <!-- Delivery Address -->
-
-        <h2>Delivery Address</h2>
-
-
-        <!-- Street / House number -->
-
-        <div class="form-row">
-
-          <div class="form-group">
-
-            <label for="street">
-              Street
-            </label>
-
-            <input
-              id="street"
-              type="text"
-              name="street"
-              [(ngModel)]="deliveryAddress.street"
-              required
-            />
+            </section>
 
           </div>
 
 
-          <div class="form-group">
+          <aside class="summary-card place-order-card">
 
-            <label for="houseNumber">
-              House number
-            </label>
+            <span class="card-eyebrow">READY TO ORDER?</span>
+            <h2>Order Total</h2>
 
-            <input
-              id="houseNumber"
-              type="text"
-              name="houseNumber"
-              [(ngModel)]="deliveryAddress.houseNumber"
-              required
-            />
+            <div class="summary-row">
+              <span>Items</span>
+              <strong>{{ itemCount() }}</strong>
+            </div>
 
-          </div>
+            <div class="summary-row">
+              <span>Subtotal</span>
+              <strong>{{ total() | currency:'EUR' }}</strong>
+            </div>
 
-        </div>
+            <div class="summary-row">
+              <span>Shipping</span>
+              <strong class="free">Free</strong>
+            </div>
 
+            <div class="summary-divider"></div>
 
-        <!-- Postal code / City -->
+            <div class="summary-total">
+              <span>Total</span>
+              <strong>{{ total() | currency:'EUR' }}</strong>
+            </div>
 
-        <div class="form-row">
+            <p class="secure-note">
+              🔒 Your order is securely processed.
+            </p>
 
-          <div class="form-group">
-
-            <label for="postalCode">
-              Postal code
-            </label>
-
-            <input
-              id="postalCode"
-              type="text"
-              name="postalCode"
-              [(ngModel)]="deliveryAddress.postalCode"
-              required
-            />
-
-          </div>
-
-
-          <div class="form-group">
-
-            <label for="city">
-              City
-            </label>
-
-            <input
-              id="city"
-              type="text"
-              name="city"
-              [(ngModel)]="deliveryAddress.city"
-              required
-            />
-
-          </div>
-
-        </div>
-
-
-        <!-- Country -->
-
-        <div class="form-group">
-
-          <label for="country">
-            Country
-          </label>
-
-          <input
-            id="country"
-            type="text"
-            name="country"
-            [(ngModel)]="deliveryAddress.country"
-            required
-          />
-
-        </div>
-
-        <div class="address-actions">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            (click)="saveCustomerAddress()"
-            [disabled]="submitting()">
-            @if (submitting()) {
-              Saving...
-            } @else {
-              Save Address
-            }
-          </button>
-        </div>
-
-
-        <!-- ========================= -->
-        <!-- ORDER SUMMARY              -->
-        <!-- ========================= -->
-
-        <div class="order-summary">
-
-          <h2>Order Summary</h2>
-
-
-          <div class="summary-row">
-
-            <span>
-              Items
-            </span>
-
-            <strong>
-              {{ itemCount() }}
-            </strong>
-
-          </div>
-
-
-          <div class="summary-row">
-
-            <span>
-              Total
-            </span>
-
-            <strong>
-              {{ total() | currency }}
-            </strong>
-
-          </div>
-
-        </div>
-
-
-        <!-- ========================= -->
-        <!-- ACTIONS                    -->
-        <!-- ========================= -->
-
-        <div class="checkout-actions">
-          <button
-            type="button"
-            class="back-button"
-            (click)="showCheckoutForm.set(false)"
-          >
-            Back to Cart
-          </button>
-
-
-          <button
-            type="submit"
-            class="place-order-button"
-            [disabled]="
-              submitting() ||
-              itemCount() === 0
-            "
-          >
-
-            @if (submitting()) {
-              <span>
-                Processing...
-              </span>
-            } @else {
-
-              <span>
+            <button
+              type="button"
+              class="btn btn-primary btn-full place-order-button"
+              [disabled]="submitting()"
+              (click)="placeOrder()"
+            >
+              @if (submitting()) {
+                <span class="button-spinner"></span>
+                Placing Order...
+              } @else {
                 Place Order
-              </span>
+              }
+            </button>
 
-            }
+            <button
+              type="button"
+              class="btn btn-secondary btn-full"
+              [disabled]="submitting()"
+              (click)="goToStep(2)"
+            >
+              ← Back to Delivery
+            </button>
 
-          </button>
+          </aside>
 
         </div>
 
-      </form>
+      </div>
+    }
 
+
+    <!-- ================================================ -->
+      <!-- STEP 4 - CONFIRMATION                           -->
+      <!-- ================================================ -->
+
+    @if (currentStep() === 4) {
+
+      <div class="confirmation-page">
+
+        <div class="confirmation-card">
+
+          <div class="success-icon">
+            ✓
+          </div>
+
+          <span class="page-eyebrow">ORDER CONFIRMED</span>
+
+          <h2>Thank you for your order!</h2>
+
+          <p class="confirmation-message">
+            Your order has been successfully placed.
+            We've received your order and will start processing it shortly.
+          </p>
+
+          @if (createdOrder(); as order) {
+
+            <div class="order-number">
+              <span>Order number</span>
+              <strong>#{{ order.id }}</strong>
+            </div>
+
+            <div class="confirmation-details">
+
+              <div>
+                <span>Status</span>
+                <strong>{{ order.status ?? 'CREATED' }}</strong>
+              </div>
+
+              <div>
+                <span>Total</span>
+                <strong>
+                  {{
+                    order.totalAmount ?? 0
+                      | currency:(order.currency ?? 'EUR')
+                  }}
+                </strong>
+              </div>
+
+            </div>
+
+          }
+
+          <div class="confirmation-address">
+            <span class="detail-label">Delivery address</span>
+
+            <strong>
+              {{ deliveryAddress.firstName }}
+              {{ deliveryAddress.lastName }}
+            </strong>
+
+            <span>
+              {{ deliveryAddress.street }}
+              {{ deliveryAddress.houseNumber }}
+            </span>
+
+            <span>
+              {{ deliveryAddress.postalCode }}
+              {{ deliveryAddress.city }}
+            </span>
+
+            <span>{{ deliveryAddress.country }}</span>
+          </div>
+
+          <div class="confirmation-actions">
+            <a
+              routerLink="/products"
+              class="btn btn-primary"
+            >
+              Continue Shopping
+            </a>
+          </div>
+
+        </div>
+
+      </div>
     }
 
   }
 
 </section>
-
-
