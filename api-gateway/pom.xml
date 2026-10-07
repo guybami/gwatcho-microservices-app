@@ -18,7 +18,7 @@
     <artifactId>api-gateway</artifactId>
     <version>0.0.1-SNAPSHOT</version>
 
-    <name>api-gateway</name>
+    <name>Api Gateway Service</name>
     <description>API Gateway for GWatcho Smart Shop</description>
 
     <properties>

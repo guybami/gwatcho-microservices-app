@@ -8,7 +8,7 @@ spring:
     name: order-service
 
   kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    bootstrap-servers: kafka:9092
     producer:
       acks: all
       retries: 10
