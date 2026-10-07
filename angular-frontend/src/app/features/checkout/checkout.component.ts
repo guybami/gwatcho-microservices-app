@@ -34,14 +34,9 @@ export class CheckoutComponent implements OnInit {
   /**
    * Cart signals
    */
-  readonly items =
-    this.cartService.cart;
-
-  readonly itemCount =
-    this.cartService.itemCount;
-
-  readonly total =
-    this.cartService.total;
+  readonly items = this.cartService.cart;
+  readonly itemCount = this.cartService.itemCount;
+  readonly total = this.cartService.total;
 
   /**
    * Checkout state

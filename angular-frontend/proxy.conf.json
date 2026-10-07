@@ -1,8 +1,31 @@
 {
-  "/api": {
-    "target": "http://localhost:8083/product-service",
+  "/api/users": {
+    "target": "http://localhost:8085",
     "secure": false,
     "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/users": "/api-gateway/user-service/api/users"
+    },
+    "logLevel": "debug"
+  },
+
+  "/api/products": {
+    "target": "http://localhost:8085",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/products": "/api-gateway/product-service/api/products"
+    },
+    "logLevel": "debug"
+  },
+
+  "/api/order-service": {
+    "target": "http://localhost:8085",
+    "secure": false,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/order-service": "/api-gateway/order-service"
+    },
     "logLevel": "debug"
   }
 }
