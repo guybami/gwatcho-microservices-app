@@ -4,6 +4,7 @@ import com.gwatcho.userservice.dto.UserResponse;
 import com.gwatcho.userservice.entity.UserStatus;
 import com.gwatcho.userservice.service.UserService;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +36,11 @@ class UserControllerTest {
 
     @MockBean
     private UserService userService;
+
+    @BeforeEach
+    void cleanDatabase() {
+
+    }
 
     @Test
     void shouldCreateUser() throws Exception {

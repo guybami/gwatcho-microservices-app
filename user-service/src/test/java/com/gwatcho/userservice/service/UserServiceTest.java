@@ -44,6 +44,9 @@ class UserServiceTest {
                 outboxEventRepository,
                 objectMapper
         );
+
+        outboxEventRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test
