@@ -1,8 +1,9 @@
-package com.gwatcho.productservice.repository;
+package com.gwatcho.productservice.integration;
 
 import com.gwatcho.productservice.entity.Product;
 import com.gwatcho.productservice.entity.ProductStatus;
 
+import com.gwatcho.productservice.repository.ProductRepository;
 import jakarta.persistence.EntityManager;
 
 import jakarta.persistence.OptimisticLockException;
@@ -11,15 +12,12 @@ import org.junit.jupiter.api.Test;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import jakarta.persistence.OptimisticLockException;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -44,6 +42,8 @@ class ProductRepositoryIntegrationTest {
         transactionTemplate =
                 new TransactionTemplate(transactionManager);
     }
+
+
 
     @Test
     void shouldPersistProductWithVersion() {

@@ -1,9 +1,11 @@
-package com.gwatcho.productservice.service;
+package com.gwatcho.productservice.integration;
 
 import com.gwatcho.productservice.dto.CreateProductRequest;
-import com.gwatcho.productservice.entity.OutboxEvent;
 import com.gwatcho.productservice.entity.OutboxStatus;
 import com.gwatcho.productservice.repository.OutboxEventRepository;
+import com.gwatcho.productservice.repository.ProductRepository;
+import com.gwatcho.productservice.service.ProductService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -21,6 +23,15 @@ class ProductOutboxIntegrationTest {
 
     @Autowired
     private OutboxEventRepository outboxEventRepository;
+
+    @Autowired
+    private ProductRepository productRepository;
+
+    @BeforeEach
+    void cleanDatabase() {
+        outboxEventRepository.deleteAll();
+        productRepository.deleteAll();
+    }
 
 
     @Test

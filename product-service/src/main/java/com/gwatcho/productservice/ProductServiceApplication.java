@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -16,6 +17,7 @@ import javax.sql.DataSource;
 public class ProductServiceApplication {
 
     @Bean
+    @ConditionalOnBean(DataSource.class)
     CommandLineRunner verifyDatasource(DataSource dataSource) {
         return args -> {
             HikariDataSource hikari = (HikariDataSource) dataSource;
