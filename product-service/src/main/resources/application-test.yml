@@ -52,6 +52,8 @@ app:
 
 logging:
   level:
+    root: INFO
+
     org.hibernate.SQL: OFF
     org.hibernate.orm.jdbc.bind: OFF
     org.hibernate.orm.jdbc.extract: OFF
