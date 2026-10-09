@@ -37,3 +37,13 @@ build/
 ### Mac OS ###
 .DS_Store
 .idea/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+
+# Secret files
+secrets/
+*.secret
+*.secrets

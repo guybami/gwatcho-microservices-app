@@ -7,6 +7,8 @@ import com.gwatcho.orderservice.entity.Order;
 import com.gwatcho.orderservice.entity.OrderItem;
 import com.gwatcho.orderservice.entity.OrderStatus;
 import java.math.BigDecimal;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -16,8 +18,14 @@ import org.springframework.test.context.ActiveProfiles;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @ActiveProfiles("test")
-class OrderRepositoryIntegrationTest {
+class OrderRepositoryTest {
+
     @Autowired private OrderRepository orderRepository;
+
+    @BeforeEach
+    void cleanDatabase() {
+        orderRepository.deleteAll();
+    }
 
     @Test
     void shouldSaveOrderWithItems() {
