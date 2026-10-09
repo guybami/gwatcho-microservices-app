@@ -71,6 +71,7 @@ import org.springframework.util.MultiValueMap;
 @ActiveProfiles("test")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class OrderPaymentDeliveryEndToEndTest {
+
     // =========================================================
     // INFRASTRUCTURE
     // =========================================================
@@ -105,7 +106,6 @@ class OrderPaymentDeliveryEndToEndTest {
     // =========================================================
     // SPRING
     // =========================================================
-
     @LocalServerPort private int port;
 
     @Autowired private TestRestTemplate restTemplate;
@@ -135,7 +135,6 @@ class OrderPaymentDeliveryEndToEndTest {
         // =====================================================
 
         String sku = "E2E-" + UUID.randomUUID();
-
         String productRequestBody = """
         {
             "sku" : "%s",
