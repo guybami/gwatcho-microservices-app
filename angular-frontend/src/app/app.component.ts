@@ -16,7 +16,7 @@ import { CartService } from './core/services/cart.service';
   styleUrl: './app.component.scss'
 })
 export class AppComponent {
-
+  title = 'gwatcho-microservices-app';
   readonly authService = inject(AuthService);
   readonly cartService = inject(CartService);
   readonly cartItemCount = this.cartService.itemCount;
