@@ -7,10 +7,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.gwatcho.paymentservice.dto.DeliveryAddress;
 import com.gwatcho.paymentservice.entity.Payment;
 import java.math.BigDecimal;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 
 class PaymentEventPublisherTest {
     private KafkaTemplate<String, String> kafkaTemplate;
@@ -22,6 +24,12 @@ class PaymentEventPublisherTest {
         kafkaTemplate = mock(KafkaTemplate.class);
 
         objectMapper = new ObjectMapper();
+
+        // PaymentEventPublisher calls kafkaTemplate.send(...).get(),
+        // therefore the mock must return a completed future.
+        CompletableFuture<SendResult<String, String>> future = CompletableFuture.completedFuture(null);
+
+        when(kafkaTemplate.send(anyString(), anyString(), anyString())).thenReturn(future);
 
         publisher = new PaymentEventPublisher(kafkaTemplate, objectMapper);
     }
@@ -48,7 +56,6 @@ class PaymentEventPublisherTest {
         verify(kafkaTemplate, times(1)).send(topicCaptor.capture(), keyCaptor.capture(), valueCaptor.capture());
 
         assertEquals("payment.completed", topicCaptor.getValue());
-
         assertEquals("100", keyCaptor.getValue());
 
         String value = valueCaptor.getValue();
@@ -82,7 +89,6 @@ class PaymentEventPublisherTest {
         verify(kafkaTemplate, times(1)).send(topicCaptor.capture(), keyCaptor.capture(), valueCaptor.capture());
 
         assertEquals("payment.failed", topicCaptor.getValue());
-
         assertEquals("100", keyCaptor.getValue());
 
         String value = valueCaptor.getValue();

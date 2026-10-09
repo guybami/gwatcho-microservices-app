@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @ActiveProfiles("test")
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class PaymentRepositoryIntegrationTest {
+class PaymentRepositoryTest {
 
     @Autowired
     private PaymentRepository paymentRepository;
